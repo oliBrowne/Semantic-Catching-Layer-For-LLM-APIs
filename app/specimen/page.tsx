@@ -2,7 +2,7 @@
 
 import DrawnMark from '@/components/DrawnMark';
 import HandwritingText from '@/components/HandwritingText';
-import { FLOURISH, HEART } from '@/lib/font/marks';
+import { HEART, SIGNATURE_MARK } from '@/lib/font/marks';
 
 /**
  * A type specimen, for tuning the alphabet and the two drawings.
@@ -27,8 +27,7 @@ export default function SpecimenPage() {
         </section>
       ))}
       <section className="specimen__row specimen__mark">
-        <HandwritingText text="Oliver" size={40} slant={14} align="center" staticInk glow={false} />
-        <DrawnMark mark={FLOURISH} start />
+        <DrawnMark mark={SIGNATURE_MARK} start speed={900} ariaLabel="Oliver" />
       </section>
       <section className="specimen__row specimen__mark specimen__mark--small">
         <DrawnMark mark={HEART} start />

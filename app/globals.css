@@ -606,23 +606,21 @@ body {
   z-index: 5;
   display: grid;
   justify-items: center;
-  gap: 0.9rem;
-  width: min(62vw, 15rem);
+  gap: 0.6rem;
+  width: min(74vw, 19rem);
   transform: translateY(6svh);
 }
 
 .ending__yours {
-  width: 62%;
+  width: 46%;
 }
 
-.ending__name .hand__stroke,
-.ending__flourish .mark__stroke {
+.ending__name {
+  width: 100%;
+}
+
+.ending__name .mark__stroke {
   stroke: var(--paper-ink);
-}
-
-.ending__flourish {
-  width: 108%;
-  margin-top: -0.4rem;
 }
 
 .ending__secret {
@@ -749,7 +747,7 @@ body {
   }
 
   .ending__signature {
-    width: min(30vw, 17rem);
+    width: min(34vw, 21rem);
   }
 }
 

@@ -33,9 +33,10 @@ written again — one stroke at a time, by a hand you cannot see.
   shading, and a catch of light.
 - **The photograph develops.** One picture, revealed as a band behind the last
   sentence and opened outward only if the reader keeps going.
-- **A signature, in the letter's own hand**, finished with one long swash that
-  carries past the end of the name — because the person who wrote the letter is
-  the person signing it.
+- **A real signature.** Not the alphabet set larger: a cursive run authored on
+  its own — an oversized capital, a looped ascender, the rest of the name in one
+  unbroken movement, the dot added afterwards as it always is, and a swash
+  underneath that exists only for the pleasure of making it.
 
 ---
 
@@ -181,9 +182,15 @@ the scrollbar is the playhead. Every card occupies the same square of the fixed
 frame, so one hands over to the next without anything travelling across the
 screen to get there.
 
-**`components/DrawnMark.tsx`** does the same for the two things that are not
-letters: the heart and the swash under the signature, both in
-`lib/font/marks.ts`.
+**`components/DrawnMark.tsx`** does the same for the two drawings that are not
+letters — the heart and the signature — both in `lib/font/marks.ts`.
+
+The signature is worth a note if you ever want to change it. Cursive lives in
+the joins, so it is authored as one long run with far more points than a glyph
+needs, and the letters that have no distinguishing feature simply do not read:
+without a hook on the `v`, a closed loop on the `e` and a shoulder on the `r`,
+the whole thing came out as an even row of humps that said "Olivam". Space them
+generously and turn the corners rather than cornering them.
 
 Because the reader can run the writing backwards, everything visual has to be a
 tween rather than a one-shot. That is why the warm glow is a single point of

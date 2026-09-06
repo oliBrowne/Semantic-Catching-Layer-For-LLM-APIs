@@ -37,18 +37,33 @@ export const HEART: Mark = {
 };
 
 /**
- * The swash under the signature.
+ * The signature.
  *
- * The name itself is written in the same hand as the rest of the letter —
- * which is the point: the person who wrote the letter is the person signing
- * it. What makes it a signature rather than a word is this: one long stroke
- * underneath, made in a single movement, that carries past the end of the name
- * and curls back on itself.
+ * A signature is not handwriting. It is a shape a person has made so many
+ * times that it has stopped being letters — which is why this is authored as
+ * one long cursive run rather than assembled from the alphabet, and why it
+ * needs far more points than a glyph does. Cursive lives in the joins: the
+ * upstroke out of one letter is the entry into the next, and the loops have to
+ * turn rather than corner.
+ *
+ * Four strokes, in the order a hand makes them: the capital, the rest of the
+ * name in a single unbroken run, the dot over the i put in afterwards as they
+ * always are, and a swash that exists only for the pleasure of making it.
  */
-export const FLOURISH: Mark = {
-  viewBox: '-10 -46 620 96',
+export const SIGNATURE_MARK: Mark = {
+  viewBox: '4 -180 572 262',
   strokes: [
-    '14,12 78,32 178,44 300,46 420,38 512,22 568,3 592,-19 579,-34 551,-25',
+    // A big, unhurried O, closing just past where it started.
+    '165,-118 150,-135 128,-145 104,-147 80,-139 60,-121 46,-95 40,-65 42,-39 52,-18 68,-5 90,0 112,-3 132,-16 147,-38 156,-66 157,-94 150,-118 138,-134 121,-141',
+    // l, i, v, e and r without lifting the pen: up into the ascender loop and
+    // down through it, then along the baseline and into each letter in turn.
+    // The v takes a hook at the top, the e is a closed loop and the r a
+    // shoulder, because without those three the whole run reads as humps.
+    '170,-4 179,-46 190,-90 202,-130 209,-150 206,-160 197,-156 191,-142 189,-120 190,-88 192,-56 194,-30 198,-12 206,-3 218,-1 230,-8 240,-40 248,-62 252,-40 256,-20 260,-6 268,-1 278,-6 289,-42 299,-68 309,-42 318,-16 324,-5 334,-38 343,-66 352,-62 360,-68 364,-48 368,-33 384,-39 400,-45 396,-60 381,-67 366,-60 358,-41 361,-21 375,-8 391,-7 404,-15 414,-42 421,-63 426,-50 437,-48 447,-55 452,-44 460,-30 472,-16 486,-7 502,-6 516,-12',
+    // The dot over the i.
+    '246,-83 252,-89',
+    // And the swash: one movement, out past the end of the name and back.
+    '46,28 96,42 170,50 260,52 350,46 430,34 490,17 523,-4 529,-25 516,-36 497,-29 491,-14',
   ],
-  weights: [1],
+  weights: [1.15, 1.0, 0.85, 0.95],
 };

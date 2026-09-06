@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { gsap, ScrollTrigger } from '@/lib/scroll';
 import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
 import { FINAL_LINE, SIGNATURE } from '@/content/letter';
-import { FLOURISH, HEART } from '@/lib/font/marks';
+import { HEART, SIGNATURE_MARK } from '@/lib/font/marks';
 import { SCHEDULE } from '@/lib/schedule';
 import { useAtmosphere } from '@/lib/particles/context';
 import DrawnMark from './DrawnMark';
@@ -63,12 +63,15 @@ export default function Ending() {
     });
   };
 
-  const onFlourishTimeline = (timeline: gsap.core.Timeline) => {
+  const onSignatureTimeline = (timeline: gsap.core.Timeline) => {
     ScrollTrigger.create({
       animation: timeline,
-      start: () => vh() * ending.flourish,
-      end: () => vh() * (ending.flourish + 0.7),
-      scrub: 0.55,
+      // The name and its swash are one drawing, so they get one long stretch
+      // of scroll: the capital, the run through the rest of it, the dot, and
+      // then the stroke underneath that finishes it.
+      start: () => vh() * (ending.signature + 0.55),
+      end: () => vh() * (ending.flourish + 0.9),
+      scrub: 0.6,
       invalidateOnRefresh: true,
     });
   };
@@ -192,14 +195,32 @@ export default function Ending() {
       </div>
 
       <div ref={signatureRef} className="ending__signature">
-        <SignatureLine ready={near} />
+        <Passage
+          text={SIGNATURE.first}
+          align="center"
+          size={24}
+          ready={near}
+          scrub
+          onTimeline={(timeline) => {
+            ScrollTrigger.create({
+              animation: timeline,
+              start: () => vh() * ending.signature,
+              end: () => vh() * (ending.signature + 0.45),
+              scrub: 0.55,
+              invalidateOnRefresh: true,
+            });
+          }}
+          className="ending__yours"
+        />
         {near ? (
           <DrawnMark
-            mark={FLOURISH}
-            className="ending__flourish"
+            mark={SIGNATURE_MARK}
+            className="ending__name"
             scrub
-            strokeWidth={3}
-            onTimeline={onFlourishTimeline}
+            strokeWidth={2.8}
+            speed={900}
+            onTimeline={onSignatureTimeline}
+            ariaLabel={SIGNATURE.second}
           />
         ) : null}
       </div>
@@ -207,45 +228,6 @@ export default function Ending() {
       <div className="ending__secret">
         <SecretMessage ready={near} at={ending.secret} />
       </div>
-    </>
-  );
-}
-
-/** "Yours," and then, after a moment, the name. */
-function SignatureLine({ ready }: { ready: boolean }) {
-  const vh = () => window.innerHeight;
-
-  const attach = (at: number, span: number) => (timeline: gsap.core.Timeline) => {
-    ScrollTrigger.create({
-      animation: timeline,
-      start: () => vh() * at,
-      end: () => vh() * (at + span),
-      scrub: 0.55,
-      invalidateOnRefresh: true,
-    });
-  };
-
-  return (
-    <>
-      <Passage
-        text={SIGNATURE.first}
-        align="center"
-        size={24}
-        ready={ready}
-        scrub
-        onTimeline={attach(ending.signature, 0.45)}
-        className="ending__yours"
-      />
-      <Passage
-        text={SIGNATURE.second}
-        align="center"
-        size={40}
-        slant={14}
-        ready={ready}
-        scrub
-        onTimeline={attach(ending.signature + 0.6, 0.55)}
-        className="ending__name"
-      />
     </>
   );
 }
