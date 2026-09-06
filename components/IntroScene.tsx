@@ -72,6 +72,7 @@ export default function IntroScene() {
             speed={880}
             delay={1.0}
             lineHeight={165}
+            pauseAfterLine={{ 0: 0.5 }}
             start={secondLine}
             onComplete={() => setDone(true)}
             className="intro__second"

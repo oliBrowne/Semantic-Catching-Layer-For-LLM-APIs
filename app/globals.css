@@ -377,8 +377,6 @@ body {
   position: fixed;
   inset: 0;
   z-index: 2;
-  display: grid;
-  place-items: center;
   overflow: hidden;
   pointer-events: none;
 }
@@ -388,10 +386,19 @@ body {
   slightly warmer, in the shape of paper caught in a small light. The gradient
   reaches zero well inside the element, so there is never a boundary to see.
 */
+/*
+  Centred with margins rather than grid alignment or a transform: a grid item
+  larger than a clipped container gets clamped to the start corner, and a
+  transform here would be overwritten by the scale this is animated with.
+*/
 .paper__sheet {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: 172vw;
   height: 156svh;
+  margin-left: -86vw;
+  margin-top: -78svh;
   background: radial-gradient(
     46% 38% at 50% 47%,
     rgba(238, 216, 178, 0.1),
@@ -677,4 +684,24 @@ body {
   .scene__inner--wide {
     width: min(46vw, 40rem);
   }
+}
+
+/* ── A stanza read one line at a time ───────────────────────────────────── */
+
+/*
+  Every line of the stanza lives in the same grid cell, so they all occupy one
+  place on screen and hand over to each other without anything moving. The row
+  is as tall as the longest line, which is what keeps the block still even when
+  a line turns over onto two.
+*/
+.stanza {
+  display: grid;
+  width: 100%;
+}
+
+.stanza__line {
+  grid-area: 1 / 1;
+  align-self: center;
+  width: 100%;
+  will-change: opacity, transform;
 }

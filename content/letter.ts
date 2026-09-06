@@ -1,9 +1,10 @@
 /**
  * The letter itself.
  *
- * Line breaks are the ones from the page. `holds` maps a line index to the
- * extra seconds the hand rests before starting the next line, which is how the
- * pacing of the piece is tuned: everything else about the writing is physics.
+ * Line breaks are the ones from the page, and each of them is read on its own.
+ * `holds` maps a line index to the extra seconds it stays on screen after it is
+ * written, on top of the beat every line gets. That map is how the pacing of
+ * the piece is tuned; everything else about the writing is physics.
  */
 
 export const OPENING = {

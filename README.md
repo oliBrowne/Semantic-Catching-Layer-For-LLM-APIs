@@ -13,6 +13,9 @@ written again — one stroke at a time, by a hand you cannot see.
 - **The poem is genuinely handwritten.** Every glyph is a pen path, not a font
   outline, so the strokes are drawn in the order and direction a hand would
   move. No typewriter reveal, no per-character fades, no cursor.
+- **A stanza is read one line at a time.** Each line is written alone in the
+  middle of the screen, held long enough to land, and gone before the next one
+  begins — except the last, which stays.
 - **Nothing repeats exactly.** Letter size, slant, baseline, pressure and ink
   density all wander, seeded from the words themselves so the same passage
   always has the same quirks.
@@ -59,16 +62,20 @@ The file currently in the repository is a placeholder, not a photograph.
 ### 2. The words
 
 Everything written on screen lives in **`content/letter.ts`**, including the
-pauses. Each passage carries a `holds` map from line index to the extra seconds
-the hand rests before starting the next line — that map *is* the pacing of the
-piece.
+pauses. Each stanza carries a `holds` map from line index to the extra seconds
+that line stays on screen after it is written, on top of the beat every line
+gets. That map *is* the pacing of the piece.
 
 ```ts
 export const EYES = {
   text: ['I have passed by many eyes,', 'but yours were the only ones', …].join('\n'),
-  holds: { 1: 1.3 },   // linger after 'but yours were the only ones'
+  holds: { 1: 1.3 },   // linger on 'but yours were the only ones'
 };
 ```
+
+The three constants at the top of **`components/StanzaReader.tsx`** set the
+rhythm underneath that: the beat every line is given, how long a finished line
+takes to dissolve, and how much dark there is before the next one starts.
 
 ### 3. The last thing
 
@@ -137,6 +144,14 @@ Passages auto-fit: the hand shrinks until the longest written line fits the
 column, and only once that would stop being legible does it allow a line to
 wrap.
 
+**`components/StanzaReader.tsx`** reads a stanza a line at a time. Every line
+is mounted from the start and stacked in a single grid cell, so they all occupy
+one place on screen and hand over without anything moving; each is sized to the
+longest line of the whole stanza rather than to itself, so the hand does not
+change size between them. Mounting them all up front is what lets a cue ask
+where a word on a later line is going to be before that line is written — which
+is how the ember knows where to gather.
+
 ---
 
 ## Performance and accessibility
@@ -144,7 +159,8 @@ wrap.
 - Particle count, canvas pixel ratio and the wet-ink glow all scale down on
   weaker devices (`lib/usePerformanceTier.ts`).
 - `prefers-reduced-motion` replaces the drawing with a calm sequential fade and
-  stills the dust entirely — the pacing and every cue survive.
+  stills the dust entirely — the line-by-line reading, the pacing and every cue
+  survive.
 - The full text of every passage is in the DOM for screen readers and for
   copy-and-paste, even though the visible letters are vector strokes.
 - Sticky stages rather than scripted pins, so iOS Safari's disappearing chrome

@@ -12,7 +12,7 @@ import IntroScene from './IntroScene';
 import PaperSurface from './PaperSurface';
 import PaperTransition from './PaperTransition';
 import ParticleField from './ParticleField';
-import Passage from './Passage';
+import StanzaReader from './StanzaReader';
 import Scene from './Scene';
 import SecretMessage from './SecretMessage';
 
@@ -50,15 +50,15 @@ export default function Experience() {
         <IntroScene />
 
         {/* ── the only ones ─────────────────────────────────────────────── */}
-        <Scene scroll={3.8} enterAt="top 68%">
+        <Scene scroll={4.6} enterAt="top 68%">
           {({ entered }) => (
-            <Passage
+            <StanzaReader
               text={EYES.text}
-              size={22}
-              minSize={18}
-              speed={850}
+              size={24}
+              minSize={19}
+              speed={880}
               start={entered}
-              pauseAfterLine={EYES.holds}
+              holds={EYES.holds}
               emphasisLines={[1]}
               onWordStart={({ word, point }) => {
                 // As the last line is written, the dust drifts in toward it.
@@ -81,18 +81,20 @@ export default function Experience() {
         <PromiseScene sectionRef={promiseRef} emberCount={tier.level === 'low' ? 20 : 34} />
 
         {/* ── here it is ────────────────────────────────────────────────── */}
-        <Scene scroll={4.4} wide enterAt="top 66%">
+        <Scene scroll={5.2} wide enterAt="top 66%">
           {({ entered }) => (
-            <Passage
+            <StanzaReader
               text={DECLARATION.text}
-              size={22}
-              minSize={18}
-              speed={800}
+              size={24}
+              minSize={19}
+              speed={840}
               start={entered}
-              pauseAfterLine={DECLARATION.holds}
+              holds={DECLARATION.holds}
               onWordStart={({ word }) => {
                 // Almost everything leaves the frame for the last words.
-                if (word.index === 0) atmosphere.setDensity(0.2);
+                if (word.sourceLineIndex === 0 && word.index === 0) {
+                  atmosphere.setDensity(0.2);
+                }
               }}
             />
           )}
@@ -119,17 +121,17 @@ function SmileScene() {
   const atmosphere = useAtmosphere();
 
   return (
-    <Scene scroll={4.6} wide enterAt="top 66%">
+    <Scene scroll={5.6} wide enterAt="top 66%">
       {({ entered }) => (
         <div className="passage-group">
           <div className="halo" aria-hidden="true" />
-          <Passage
+          <StanzaReader
             text={SMILE.text}
-            size={21}
-            minSize={17}
-            speed={830}
+            size={23}
+            minSize={18}
+            speed={860}
             start={entered}
-            pauseAfterLine={SMILE.holds}
+            holds={SMILE.holds}
             emphasisLines={[1, 5]}
             onWordStart={({ word }) => {
               // "like yours did." — everything in the air stops for a beat.
@@ -159,10 +161,10 @@ function PromiseScene({
   const [phase, setPhase] = useState<EmberPhase>('dark');
   const [point, setPoint] = useState<{ x: number; y: number } | null>(null);
 
-  const onLayout = useCallback((info: LayoutInfo) => {
+  const onLayout = useCallback((info: LayoutInfo, lineIndex: number) => {
+    if (lineIndex !== PROMISE.emberLine) return;
     layoutRef.current = info;
-    const onLine = info.words.filter((word) => word.sourceLineIndex === PROMISE.emberLine);
-    finalWordRef.current = onLine[onLine.length - 1] ?? null;
+    finalWordRef.current = info.words[info.words.length - 1] ?? null;
   }, []);
 
   /** Viewport coordinates, translated into the passage's own frame. */
@@ -194,18 +196,18 @@ function PromiseScene({
   };
 
   return (
-    <Scene scroll={5.4} wide enterAt="top 64%" sectionRef={sectionRef} id="promise">
+    <Scene scroll={6.4} wide enterAt="top 64%" sectionRef={sectionRef} id="promise">
       {({ entered }) => (
         <div ref={hostRef} className="passage-group passage-group--paper">
           <EmberGlow point={point} phase={phase} />
-          <Passage
+          <StanzaReader
             paper
             text={PROMISE.text}
-            size={24}
-            minSize={19}
-            speed={780}
+            size={26}
+            minSize={20}
+            speed={800}
             start={entered}
-            pauseAfterLine={PROMISE.holds}
+            holds={PROMISE.holds}
             emphasisLines={[5]}
             onLayout={onLayout}
             onWordStart={onWordStart}

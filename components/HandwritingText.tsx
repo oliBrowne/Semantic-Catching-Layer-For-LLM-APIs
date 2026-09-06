@@ -30,6 +30,13 @@ export type HandwritingTextProps = {
   fit?: boolean;
   /** The point below which shrinking stops and lines are allowed to wrap. */
   minSize?: number;
+  /**
+   * Measure this when choosing the type size, but write `text`.
+   *
+   * A stanza read one line at a time still has to be written in one hand: every
+   * line is sized to the longest line of the whole stanza, not to itself.
+   */
+  fitTo?: string;
   align?: 'left' | 'center';
   /** Design units of pen travel per second. Lower is more deliberate. */
   speed?: number;
@@ -65,6 +72,7 @@ export default function HandwritingText({
   size = 30,
   fit = true,
   minSize = 17,
+  fitTo,
   align = 'left',
   speed = 640,
   delay = 0,
@@ -112,7 +120,7 @@ export default function HandwritingText({
     // on a wider column the writing is allowed to grow with it, up to a point,
     // so the desktop reading does not become a postage stamp of type.
     const ceiling = Math.max(size, Math.min(size * 1.6, width / 15));
-    const natural = naturalWidth(text, letterSpacing) * 1.03;
+    const natural = naturalWidth(fitTo ?? text, letterSpacing) * 1.03;
     // Shrink until the longest line fits, and only once that would stop being
     // legible, let it wrap.
     const scale =
@@ -130,7 +138,7 @@ export default function HandwritingText({
       align,
       seed: text,
     });
-  }, [text, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
+  }, [text, fitTo, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
 
   // Resolved fresh on every call: a word's place on screen depends on where
   // the sticky stage happens to be at the moment something asks.
