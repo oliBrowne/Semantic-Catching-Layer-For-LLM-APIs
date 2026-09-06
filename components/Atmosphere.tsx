@@ -8,6 +8,7 @@ export default function Atmosphere() {
       <div className="atmosphere__tooth" />
       <div className="atmosphere__grain" />
       <div className="atmosphere__vignette" />
+      <div className="atmosphere__dim" />
     </div>
   );
 }

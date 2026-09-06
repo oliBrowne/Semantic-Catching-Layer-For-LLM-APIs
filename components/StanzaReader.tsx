@@ -8,6 +8,8 @@ import Passage from './Passage';
 export type StanzaReaderProps = {
   /** The whole stanza. Each line of it is read on its own. */
   text: string;
+  /** Typeset the lines, without writing any of them yet. */
+  ready?: boolean;
   start?: boolean;
   /** Extra seconds a line is held after it is written, before it dissolves. */
   holds?: Record<number, number>;
@@ -46,6 +48,7 @@ const GAP = 0.3;
  */
 export default function StanzaReader({
   text,
+  ready = true,
   start = false,
   holds,
   emphasisLines,
@@ -117,6 +120,7 @@ export default function StanzaReader({
             fitTo={text}
             size={size}
             minSize={minSize}
+            ready={ready}
             speed={speed}
             align={align}
             paper={paper}

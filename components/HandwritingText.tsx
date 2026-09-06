@@ -52,6 +52,11 @@ export type HandwritingTextProps = {
   jitter?: number;
   strokeWidth?: number;
   className?: string;
+  /**
+   * Whether to typeset at all. Building the paths is the expensive part, so a
+   * passage far down the page can hold off until it is nearly needed.
+   */
+  ready?: boolean;
   /** Nothing is written until this turns true. */
   start?: boolean;
   /** Render the passage already written, for ghosts and echoes. */
@@ -84,6 +89,7 @@ export default function HandwritingText({
   jitter = 1,
   strokeWidth = 4.9,
   className,
+  ready = true,
   start = false,
   staticInk = false,
   glow = true,
@@ -114,7 +120,7 @@ export default function HandwritingText({
   }, []);
 
   const layout = useMemo(() => {
-    if (width === 0) return null;
+    if (width === 0 || !ready) return null;
 
     // A hand adjusts its size to the paper. On a phone `size` is the ceiling;
     // on a wider column the writing is allowed to grow with it, up to a point,
@@ -138,7 +144,7 @@ export default function HandwritingText({
       align,
       seed: text,
     });
-  }, [text, fitTo, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
+  }, [text, fitTo, ready, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
 
   // Resolved fresh on every call: a word's place on screen depends on where
   // the sticky stage happens to be at the moment something asks.

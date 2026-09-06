@@ -156,8 +156,43 @@ is how the ember knows where to gather.
 
 ## Performance and accessibility
 
+Measured on the built site, iPhone 13 profile, CPU throttled 6x:
+
+| | fast 4G | slow 4G |
+|---|---|---|
+| first paint | 0.45s | 1.0s |
+| **first stroke of ink** | **1.6s** | **3.7s** |
+
+Three things get it there, and they are worth knowing about before changing
+anything near them:
+
+- **Nothing is typeset until it is nearly needed.** Building an SVG path for
+  every stroke of every word in the letter was the longest blocking task on the
+  page. Each passage now waits for its `Scene` to report `near` (within a screen
+  of the viewport) before laying itself out.
+- **The letter loads separately from the opening.** `components/Letter.tsx` and
+  everything it pulls in — ScrollTrigger included — is a dynamic import, because
+  none of it is needed for `for you.` to start being written.
+- **The opening beat adapts.** The 800ms of black is measured from first paint
+  rather than from whenever the script finished, so a slow phone does not spend
+  its wait and then wait again.
+
+Two things kept off the main thread on purpose:
+
+- The photograph is uncovered by two black curtains sliding apart on
+  `transform`, not by animating a mask. Masking a full-screen element is a
+  style recalc and a repaint every frame; this was the heaviest moment in the
+  piece and is now roughly half of what it was.
+- The room dimming at the end is a real element's `opacity`. It was a custom
+  property on `:root`, which invalidates style for the whole document on every
+  frame of it.
+
 - Particle count, canvas pixel ratio and the wet-ink glow all scale down on
-  weaker devices (`lib/usePerformanceTier.ts`).
+  weaker devices (`lib/usePerformanceTier.ts`). The glow was measured before it
+  was kept: 0.18s of style recalc over ten seconds at 6x throttle, which is
+  nothing for what it does to the ink.
+- Scene layers are promoted only while they are on screen. Eight full-viewport
+  layers held permanently is a lot of memory to ask a phone for.
 - `prefers-reduced-motion` replaces the drawing with a calm sequential fade and
   stills the dust entirely — the line-by-line reading, the pacing and every cue
   survive.

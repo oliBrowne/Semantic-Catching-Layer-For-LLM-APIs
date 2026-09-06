@@ -50,9 +50,11 @@ export default function PaperTransition({ ghost, sectionRef }: PaperTransitionPr
 
   return (
     <Scene scroll={2.2} fadeOut={false} sectionRef={sectionRef} id="transition">
-      <div ref={ghostRef} className="ghost">
-        <Passage text={ghost} align="center" size={26} staticInk glow={false} />
-      </div>
+      {({ near }) => (
+        <div ref={ghostRef} className="ghost">
+          <Passage text={ghost} align="center" size={26} ready={near} staticInk glow={false} />
+        </div>
+      )}
     </Scene>
   );
 }

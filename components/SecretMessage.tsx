@@ -13,7 +13,13 @@ import Passage from './Passage';
  * itself underneath them when you reach for it, the way you would underline
  * something by hand.
  */
-export default function SecretMessage({ start = false }: { start?: boolean }) {
+export default function SecretMessage({
+  start = false,
+  ready = true,
+}: {
+  start?: boolean;
+  ready?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -76,6 +82,7 @@ export default function SecretMessage({ start = false }: { start?: boolean }) {
           align="center"
           size={17}
           speed={560}
+          ready={ready}
           start={start}
           glow={false}
           className="secret__label"
@@ -110,6 +117,7 @@ export default function SecretMessage({ start = false }: { start?: boolean }) {
                 align="center"
                 size={19}
                 speed={820}
+                ready={open}
                 start={open}
                 className="secret__note"
               />

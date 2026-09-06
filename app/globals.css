@@ -23,9 +23,6 @@
 
   --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
 
-  /* Ambient darkening, raised once the last sentence has been written. */
-  --dim: 0;
-
   --grain-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27220%27%20height%3D%27220%27%3E%3Cfilter%20id%3D%27n%27%20x%3D%270%27%20y%3D%270%27%20width%3D%27100%25%27%20height%3D%27100%25%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.86%27%20numOctaves%3D%273%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
   --tooth-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27340%27%20height%3D%27340%27%3E%3Cfilter%20id%3D%27n%27%20x%3D%270%27%20y%3D%270%27%20width%3D%27100%25%27%20height%3D%27100%25%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.32%27%20numOctaves%3D%274%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3CfeComponentTransfer%3E%3CfeFuncA%20type%3D%27linear%27%20slope%3D%270.7%27%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
   --paper-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27300%27%20height%3D%27300%27%3E%3Cfilter%20id%3D%27n%27%20x%3D%270%27%20y%3D%270%27%20width%3D%27100%25%27%20height%3D%27100%25%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.55%27%20numOctaves%3D%275%27%20stitchTiles%3D%27stitch%27%2F%3E%3CfeColorMatrix%20type%3D%27saturate%27%20values%3D%270%27%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D%27100%25%27%20height%3D%27100%25%27%20filter%3D%27url%28%23n%29%27%2F%3E%3C%2Fsvg%3E");
@@ -173,6 +170,11 @@ body {
 .scene__inner {
   position: relative;
   width: min(74vw, var(--measure));
+}
+
+/* Promoted only while the passage is somewhere on screen. Left on permanently,
+   eight full-viewport layers is a lot of memory to ask a phone to hold. */
+.scene__inner--live {
   will-change: transform, opacity;
 }
 
@@ -228,12 +230,16 @@ body {
 
 /* ── The dark, deepening ────────────────────────────────────────────────── */
 
-.atmosphere::after {
-  content: '';
+/*
+  The room dimming once the last sentence has been written. A real element with
+  its own opacity rather than a variable on :root — changing a custom property
+  up there invalidates style for the entire document on every frame of it.
+*/
+.atmosphere__dim {
   position: absolute;
   inset: 0;
   background: var(--void);
-  opacity: var(--dim);
+  opacity: 0;
 }
 
 /* ── Opening ────────────────────────────────────────────────────────────── */
@@ -454,31 +460,46 @@ body {
 /* ── The photograph ─────────────────────────────────────────────────────── */
 
 /*
-  The photograph is revealed the way a print comes up in a tray: a band across
-  the middle first, then outward. The edges of the band are feathered, because
-  nothing else in this piece has a hard edge either.
+  The photograph is uncovered rather than masked: two black curtains meeting in
+  the middle of the frame, slid apart to open a band and then the whole picture.
+
+  Masking looks like the obvious way to do this, and it was how this worked
+  first, but animating a mask means a full style recalc and repaint of a
+  full-screen element on every frame. Sliding a transform is work the
+  compositor does on its own.
 */
 .final__photo {
-  --band-open: 0;
-  --band: 0;
-  --band-half: calc(var(--band-open) * 3.6svh + var(--band) * 62svh);
-  --band-feather: 2.4svh;
   position: absolute;
   inset: 0;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(
+}
+
+.final__curtain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 130svh;
+  z-index: 3;
+  will-change: transform;
+}
+
+.final__curtain--top {
+  bottom: 50%;
+  background: linear-gradient(
     to bottom,
-    transparent calc(50% - var(--band-half)),
-    #000 calc(50% - var(--band-half) + var(--band-feather)),
-    #000 calc(50% + var(--band-half) - var(--band-feather)),
-    transparent calc(50% + var(--band-half))
+    var(--void) 0,
+    var(--void) calc(100% - 3svh),
+    rgba(8, 8, 8, 0) 100%
   );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent calc(50% - var(--band-half)),
-    #000 calc(50% - var(--band-half) + var(--band-feather)),
-    #000 calc(50% + var(--band-half) - var(--band-feather)),
-    transparent calc(50% + var(--band-half))
+}
+
+.final__curtain--bottom {
+  top: 50%;
+  background: linear-gradient(
+    to top,
+    var(--void) 0,
+    var(--void) calc(100% - 3svh),
+    rgba(8, 8, 8, 0) 100%
   );
 }
 

@@ -18,8 +18,9 @@ import photograph from '@/public/photo.jpg';
  */
 export default function FinalPhotoReveal() {
   const sectionRef = useRef<HTMLElement | null>(null);
-  const photoRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLDivElement | null>(null);
+  const curtainTopRef = useRef<HTMLDivElement | null>(null);
+  const curtainBottomRef = useRef<HTMLDivElement | null>(null);
   const lineRef = useRef<HTMLDivElement | null>(null);
   // Signing needs both things to be true: the reader has gone far enough, and
   // the sentence above is actually finished. Someone scrolling quickly must not
@@ -35,8 +36,8 @@ export default function FinalPhotoReveal() {
     setLineWritten(true);
     atmosphere.hold(1000 * 60 * 60);
     atmosphere.setDensity(0.04);
-    gsap.to(document.documentElement, {
-      '--dim': 0.34,
+    gsap.to('.atmosphere__dim', {
+      opacity: 0.34,
       duration: 6,
       ease: 'power2.inOut',
       delay: 1.2,
@@ -52,45 +53,46 @@ export default function FinalPhotoReveal() {
 
   useIsomorphicLayoutEffect(() => {
     const section = sectionRef.current;
-    const photo = photoRef.current;
     const image = imageRef.current;
-    if (!section || !photo || !image) return;
+    const top = curtainTopRef.current;
+    const bottom = curtainBottomRef.current;
+    if (!section || !image || !top || !bottom) return;
 
     const ctx = gsap.context(() => {
       const vh = () => window.innerHeight;
+      const setTop = gsap.quickSetter(top, 'y', 'px');
+      const setBottom = gsap.quickSetter(bottom, 'y', 'px');
 
-      // First a band, barely taller than the writing, showing through behind
-      // the sentence.
-      gsap.fromTo(
-        photo,
-        { '--band-open': 0 },
-        {
-          '--band-open': 1,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: () => `top top-=${vh() * 0.8}`,
-            end: () => `top top-=${vh() * 1.35}`,
-            scrub: 1,
-          },
-        },
-      );
+      // How far apart the curtains stand, as a fraction of the screen: a band
+      // barely taller than the writing first, then, if the reader keeps going,
+      // the whole photograph.
+      const BAND = 0.036;
+      const OPEN = 0.62;
+      const KNEE = 0.22;
 
-      // Then, only if the reader keeps going, the rest of the photograph.
-      gsap.fromTo(
-        photo,
-        { '--band': 0 },
-        {
-          '--band': 1,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: () => `top top-=${vh() * 1.5}`,
-            end: () => `top top-=${vh() * 3.3}`,
-            scrub: 1,
-          },
+      const reveal = { at: 0 };
+      const apply = () => {
+        const t = reveal.at;
+        const half =
+          t < KNEE ? (t / KNEE) * BAND : BAND + ((t - KNEE) / (1 - KNEE)) * (OPEN - BAND);
+        const px = vh() * half;
+        setTop(-px);
+        setBottom(px);
+      };
+      apply();
+
+      gsap.to(reveal, {
+        at: 1,
+        ease: 'none',
+        onUpdate: apply,
+        scrollTrigger: {
+          trigger: section,
+          start: () => `top top-=${vh() * 0.8}`,
+          end: () => `top top-=${vh() * 3.3}`,
+          scrub: 1,
+          onRefresh: apply,
         },
-      );
+      });
 
       // A drift so slow it registers as the room breathing, not a zoom.
       gsap.fromTo(
@@ -128,7 +130,7 @@ export default function FinalPhotoReveal() {
       sectionRef={sectionRef}
       id="final"
       backdrop={
-        <div ref={photoRef} className="final__photo" aria-hidden="true">
+        <div className="final__photo" aria-hidden="true">
           <div ref={imageRef} className="final__frame">
             <Image
               src={photograph}
@@ -142,10 +144,12 @@ export default function FinalPhotoReveal() {
           <div className="final__warmth" />
           <div className="final__grain" />
           <div className="final__vignette" />
+          <div ref={curtainTopRef} className="final__curtain final__curtain--top" />
+          <div ref={curtainBottomRef} className="final__curtain final__curtain--bottom" />
         </div>
       }
     >
-      {({ entered }) => (
+      {({ entered, near }) => (
         <div className="final__content">
           <div ref={lineRef} className="final__line">
             <Passage
@@ -153,6 +157,7 @@ export default function FinalPhotoReveal() {
               align="center"
               size={27}
               speed={560}
+              ready={near}
               start={entered}
               slant={7}
               onComplete={onLastLine}
@@ -165,6 +170,7 @@ export default function FinalPhotoReveal() {
               align="center"
               size={22}
               speed={430}
+              ready={near}
               start={signing}
               onComplete={() => window.setTimeout(() => setSigningName(true), 1400)}
             />
@@ -174,6 +180,7 @@ export default function FinalPhotoReveal() {
               size={26}
               speed={380}
               slant={11}
+              ready={near}
               start={signingName}
               className="final__name"
             />

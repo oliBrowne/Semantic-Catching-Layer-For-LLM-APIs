@@ -5,7 +5,7 @@ import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
 import { gsap, ScrollTrigger } from '@/lib/scroll';
 
 export type SceneProps = {
-  children: ReactNode | ((state: { entered: boolean }) => ReactNode);
+  children: ReactNode | ((state: { entered: boolean; near: boolean }) => ReactNode);
   /** How many viewport heights of scroll the passage is given. */
   scroll?: number;
   /** Where in the viewport the passage begins writing itself. */
@@ -45,6 +45,8 @@ export default function Scene({
   const sectionRef = useRef<HTMLElement | null>(null);
   const innerRef = useRef<HTMLDivElement | null>(null);
   const [entered, setEntered] = useState(false);
+  const [near, setNear] = useState(false);
+  const [live, setLive] = useState(false);
 
   useIsomorphicLayoutEffect(() => {
     const section = sectionRef.current;
@@ -52,11 +54,33 @@ export default function Scene({
     if (!section || !inner) return;
 
     const ctx = gsap.context(() => {
+      // Typesetting a passage means building an SVG path for every stroke of
+      // every word in it. Doing that for the whole letter at once is the
+      // single most expensive thing on the page, so each passage waits until
+      // it is within a screen of being needed.
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top bottom+=90%',
+        once: true,
+        onEnter: () => setNear(true),
+        onRefresh: (self) => {
+          if (self.progress > 0) setNear(true);
+        },
+      });
+
       ScrollTrigger.create({
         trigger: section,
         start: enterAt,
         once: true,
         onEnter: () => setEntered(true),
+      });
+
+      // Promoted to its own layer only while it is somewhere on screen.
+      ScrollTrigger.create({
+        trigger: section,
+        start: 'top bottom',
+        end: 'bottom top',
+        onToggle: (self) => setLive(self.isActive),
       });
 
       // Rising into place as the passage arrives.
@@ -106,8 +130,17 @@ export default function Scene({
     >
       <div className="scene__stage">
         {backdrop}
-        <div ref={innerRef} className={`scene__inner${wide ? ' scene__inner--wide' : ''}`}>
-          {typeof children === 'function' ? children({ entered }) : children}
+        <div
+          ref={innerRef}
+          className={[
+            'scene__inner',
+            wide ? 'scene__inner--wide' : '',
+            live ? 'scene__inner--live' : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {typeof children === 'function' ? children({ entered, near }) : children}
         </div>
       </div>
     </section>

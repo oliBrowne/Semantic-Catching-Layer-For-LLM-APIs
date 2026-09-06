@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { gsap } from '@/lib/scroll';
+// Deliberately gsap itself, not lib/scroll: the opening has no scroll
+// behaviour, and importing from there would pull ScrollTrigger in with it.
+import gsap from 'gsap';
 import { OPENING } from '@/content/letter';
 import Passage from './Passage';
 import SoundControl from './SoundControl';
@@ -10,11 +12,30 @@ import SoundControl from './SoundControl';
  * Black, for long enough that it stops feeling like a loading screen and
  * starts feeling like a room with the lights off. Then a hand starts writing.
  */
+/**
+ * How long to hold the black before the first line.
+ *
+ * The beat is meant to be measured from the moment the screen appears, not
+ * from whenever the script finishes parsing. On a slow phone over a slow
+ * connection those are seconds apart, and adding another pause on top of that
+ * wait is how a deliberate opening starts to look like a broken page.
+ */
+function openingBeat(): number {
+  const FULL = 0.8;
+  if (typeof performance === 'undefined') return FULL;
+  const painted = performance
+    .getEntriesByType('paint')
+    .find((entry) => entry.name === 'first-paint')?.startTime;
+  if (painted === undefined) return FULL;
+  return Math.max(0.15, FULL - (performance.now() - painted) / 1000);
+}
+
 export default function IntroScene() {
   const innerRef = useRef<HTMLDivElement | null>(null);
   const beaconRef = useRef<HTMLDivElement | null>(null);
   const [secondLine, setSecondLine] = useState(false);
   const [done, setDone] = useState(false);
+  const [beat] = useState(openingBeat);
 
   useEffect(() => {
     if (!done) return;
@@ -60,7 +81,7 @@ export default function IntroScene() {
             align="center"
             size={40}
             speed={430}
-            delay={0.8}
+            delay={beat}
             slant={7}
             start
             onComplete={() => setSecondLine(true)}
