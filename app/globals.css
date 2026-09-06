@@ -9,12 +9,12 @@
   --void: #080808;
   --void-lift: #0d0c0b;
 
-  --ink: #efe4d1;
-  --ink-quiet: #b7ab97;
-  --ink-faint: #6b6357;
+  --ink: #f7eedf;
+  --ink-quiet: #c8bca7;
+  --ink-faint: #7b7264;
 
   --paper: #e9dcc4;
-  --paper-ink: #f6ecd8;
+  --paper-ink: #fcf4e4;
 
   --glow-warm: 255, 223, 176;
   --ember: 138, 30, 32;
@@ -131,55 +131,67 @@ body {
 .particles {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   /* A canvas is a replaced element: inset alone leaves it at 300x150. */
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
 
-/* ── Scenes ─────────────────────────────────────────────────────────────── */
+/* ── The frame, and the reel that drives it ────────────────────────────── */
 
-.stage {
-  position: relative;
+/*
+  The reel is empty. It exists only so there is something for the scrollbar to
+  travel along; every pixel of that travel is spent on the frame instead, which
+  never moves at all.
+*/
+.reel {
+  width: 100%;
+  pointer-events: none;
+}
+
+.frame {
+  position: fixed;
+  inset: 0;
   z-index: 5;
-}
-
-.scene {
-  position: relative;
-  /* How much scroll the passage is given before it lets go. */
-  min-height: calc(var(--scene-scroll, 2.6) * 100svh);
-}
-
-.scene__stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  /* Halos and glows bleed past the column on purpose. They stop at the edge of
-     the screen rather than widening the document. */
-  overflow: hidden;
   display: grid;
   place-items: center;
+  overflow: hidden;
   padding:
-    calc(env(safe-area-inset-top) + 2rem)
-    calc(env(safe-area-inset-right) + 1.5rem)
-    calc(env(safe-area-inset-bottom) + 2rem)
-    calc(env(safe-area-inset-left) + 1.5rem);
+    calc(env(safe-area-inset-top) + 1.5rem)
+    calc(env(safe-area-inset-right) + 1.25rem)
+    calc(env(safe-area-inset-bottom) + 1.5rem)
+    calc(env(safe-area-inset-left) + 1.25rem);
 }
 
-.scene__inner {
-  position: relative;
-  width: min(74vw, var(--measure));
+/*
+  Every card occupies the same square of the frame, so one hands over to the
+  next without anything travelling across the screen to get there.
+*/
+/*
+  Order inside the frame, back to front: the photograph, the dust in the air in
+  front of it, the sheet of paper, and the writing on top of everything.
+*/
+.card {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  z-index: 4;
+  width: min(84vw, 32rem);
 }
 
-/* Promoted only while the passage is somewhere on screen. Left on permanently,
-   eight full-viewport layers is a lot of memory to ask a phone to hold. */
-.scene__inner--live {
-  will-change: transform, opacity;
+.card--live {
+  will-change: opacity, transform;
 }
 
-.scene__inner--wide {
-  width: min(82vw, 34rem);
+.card--centre {
+  width: min(88vw, 34rem);
+}
+
+.card__ember {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 /* ── Handwriting ────────────────────────────────────────────────────────── */
@@ -192,6 +204,20 @@ body {
 }
 
 .hand__stroke {
+  fill: none;
+  stroke: var(--hand-color, var(--ink));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mark {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.mark__stroke {
   fill: none;
   stroke: var(--hand-color, var(--ink));
   stroke-linecap: round;
@@ -242,17 +268,21 @@ body {
   opacity: 0;
 }
 
-/* ── Opening ────────────────────────────────────────────────────────────── */
+/* ── Opening ───────────────────────────────────────────────────────────── */
 
-.intro__inner {
+.intro {
   display: grid;
   justify-items: center;
-  gap: 3.4rem;
-  width: min(78vw, 24rem);
+  gap: 3.2rem;
+  width: min(80vw, 24rem);
 }
 
-.intro__inner .intro__second .hand__stroke {
+.intro .intro__second .hand__stroke {
   stroke: var(--ink-quiet);
+}
+
+.intro__second {
+  width: 88%;
 }
 
 .intro__sound {
@@ -260,6 +290,7 @@ body {
   top: calc(env(safe-area-inset-top) + 1.5rem);
   left: 50%;
   transform: translateX(-50%);
+  z-index: 8;
   animation: surface 2.4s 2.6s var(--ease-soft) both;
 }
 
@@ -269,6 +300,7 @@ body {
   left: 50%;
   transform: translateX(-50%);
   opacity: 0;
+  animation: surface 2.6s 5.4s var(--ease-soft) forwards;
 }
 
 .intro__beacon-dot {
@@ -382,7 +414,7 @@ body {
 .paper {
   position: fixed;
   inset: 0;
-  z-index: 2;
+  z-index: 3;
   overflow: hidden;
   pointer-events: none;
 }
@@ -459,6 +491,8 @@ body {
 
 /* ── The photograph ─────────────────────────────────────────────────────── */
 
+/* ── The ending ────────────────────────────────────────────────────────── */
+
 /*
   The photograph is uncovered rather than masked: two black curtains meeting in
   the middle of the frame, slid apart to open a band and then the whole picture.
@@ -468,55 +502,27 @@ body {
   full-screen element on every frame. Sliding a transform is work the
   compositor does on its own.
 */
-.final__photo {
+.photo {
   position: absolute;
   inset: 0;
+  z-index: 1;
   overflow: hidden;
 }
 
-.final__curtain {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 130svh;
-  z-index: 3;
-  will-change: transform;
-}
-
-.final__curtain--top {
-  bottom: 50%;
-  background: linear-gradient(
-    to bottom,
-    var(--void) 0,
-    var(--void) calc(100% - 3svh),
-    rgba(8, 8, 8, 0) 100%
-  );
-}
-
-.final__curtain--bottom {
-  top: 50%;
-  background: linear-gradient(
-    to top,
-    var(--void) 0,
-    var(--void) calc(100% - 3svh),
-    rgba(8, 8, 8, 0) 100%
-  );
-}
-
-.final__frame {
+.photo__frame {
   position: absolute;
   inset: 0;
   will-change: transform;
 }
 
-.final__image {
+.photo__image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
 }
 
-.final__warmth {
+.photo__warmth {
   position: absolute;
   inset: 0;
   background: linear-gradient(
@@ -528,7 +534,7 @@ body {
   mix-blend-mode: multiply;
 }
 
-.final__grain {
+.photo__grain {
   position: absolute;
   inset: -40px;
   background-image: var(--grain-image);
@@ -537,7 +543,7 @@ body {
   mix-blend-mode: overlay;
 }
 
-.final__vignette {
+.photo__vignette {
   position: absolute;
   inset: 0;
   background: radial-gradient(
@@ -548,37 +554,83 @@ body {
   );
 }
 
-/*
-  The last sentence sits dead centre and stays there; the signature hangs
-  beneath it without ever pushing it off the middle of the screen, so the band
-  of photograph opens exactly behind the words.
-*/
-.final__content {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  justify-items: center;
-  width: 100%;
-}
-
-.final__line {
-  width: 100%;
-}
-
-.final__signature {
+.photo__curtain {
   position: absolute;
-  top: calc(100% + 13svh);
-  left: 50%;
-  transform: translateX(-50%);
-  display: grid;
-  justify-items: center;
-  gap: 1rem;
-  width: 62%;
-  min-width: 9rem;
+  left: 0;
+  right: 0;
+  height: 130svh;
+  z-index: 3;
+  will-change: transform;
 }
 
-.final__name .hand__stroke {
+.photo__curtain--top {
+  bottom: calc(50% - 3svh);
+  background: linear-gradient(
+    to bottom,
+    var(--void) 0,
+    var(--void) calc(100% - 3svh),
+    rgba(8, 8, 8, 0) 100%
+  );
+}
+
+.photo__curtain--bottom {
+  top: calc(50% - 3svh);
+  background: linear-gradient(
+    to top,
+    var(--void) 0,
+    var(--void) calc(100% - 3svh),
+    rgba(8, 8, 8, 0) 100%
+  );
+}
+
+/* The last sentence sits dead centre; everything else in the ending hangs off
+   that, so the band of photograph opens exactly behind the words. */
+.ending__line {
+  z-index: 5;
+}
+
+.ending__heart {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  z-index: 5;
+  width: 6.5rem;
+  transform: translateY(19svh);
+  --hand-color: var(--ink);
+}
+
+.ending__signature {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: 0.9rem;
+  width: min(62vw, 15rem);
+  transform: translateY(6svh);
+}
+
+.ending__yours {
+  width: 62%;
+}
+
+.ending__name .hand__stroke,
+.ending__flourish .mark__stroke {
   stroke: var(--paper-ink);
+}
+
+.ending__flourish {
+  width: 108%;
+  margin-top: -0.4rem;
+}
+
+.ending__secret {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  z-index: 5;
+  transform: translateY(34svh);
 }
 
 /* ── One more thing ─────────────────────────────────────────────────────── */
@@ -680,49 +732,33 @@ body {
     --measure: 32rem;
   }
 
-  .scene__inner {
-    width: min(56vw, var(--measure));
+  .card {
+    width: min(62vw, 34rem);
   }
 
-  .scene__inner--wide {
-    width: min(64vw, 38rem);
+  .card--centre {
+    width: min(68vw, 36rem);
   }
 
-  .intro__inner {
+  .intro {
     width: min(38vw, 26rem);
   }
 
-  .final__content {
-    gap: 26svh;
+  .ending__heart {
+    width: 7.5rem;
+  }
+
+  .ending__signature {
+    width: min(30vw, 17rem);
   }
 }
 
 @media (min-width: 75rem) {
-  .scene__inner {
-    width: min(40vw, var(--measure));
+  .card {
+    width: min(44vw, 36rem);
   }
 
-  .scene__inner--wide {
-    width: min(46vw, 40rem);
+  .card--centre {
+    width: min(46vw, 38rem);
   }
-}
-
-/* ── A stanza read one line at a time ───────────────────────────────────── */
-
-/*
-  Every line of the stanza lives in the same grid cell, so they all occupy one
-  place on screen and hand over to each other without anything moving. The row
-  is as tall as the longest line, which is what keeps the block still even when
-  a line turns over onto two.
-*/
-.stanza {
-  display: grid;
-  width: 100%;
-}
-
-.stanza__line {
-  grid-area: 1 / 1;
-  align-self: center;
-  width: 100%;
-  will-change: opacity, transform;
 }

@@ -2,22 +2,25 @@
 
 import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { REEL_LENGTH } from '@/lib/schedule';
 import { useAtmosphere } from '@/lib/particles/context';
 import IntroScene from './IntroScene';
 
 /*
-  Everything below the opening is loaded separately.
-
-  Nothing in the letter — not a single scroll trigger, not one typeset
-  passage — is needed for "for you." to start being written, and hydrating it
-  all first was the longest blocking task on the page. Splitting it here means
-  the opening comes alive while the rest arrives underneath it.
+  Everything below the opening is loaded separately. Nothing in the letter is
+  needed for "for you." to start being written, and hydrating it all first was
+  the longest blocking task on the page.
 */
 const Letter = dynamic(() => import('./Letter'), { ssr: false });
 const ParticleField = dynamic(() => import('./ParticleField'), { ssr: false });
 
 /**
- * The whole piece, in order: black, then a hand, then the letter.
+ * The whole piece.
+ *
+ * The frame is fixed to the window and never moves. The reel below it is empty
+ * — it exists only to give the scrollbar something to travel along, and that
+ * travel is what runs the pen, opens the photograph and draws the heart. The
+ * reader is not scrolling past a page; they are turning the handle on one.
  */
 export default function Experience() {
   const atmosphere = useAtmosphere();
@@ -36,9 +39,14 @@ export default function Experience() {
 
   return (
     <>
-      <ParticleField />
+      <div
+        className="reel"
+        style={{ height: `${REEL_LENGTH * 100}svh` }}
+        aria-hidden="true"
+      />
 
-      <main className="stage">
+      <main className="frame">
+        <ParticleField />
         <IntroScene />
         <Letter />
       </main>

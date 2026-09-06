@@ -1,20 +1,28 @@
 /**
  * The sound of the room the letter was written in.
  *
- * Entirely synthesised, so there is nothing to download and nothing to buffer
- * before the first note: a low warm drone, a breath of room tone, an
- * occasional far-off bell, and the faintest scratch of a nib on paper timed to
- * the strokes being drawn on screen.
+ * Two layers, and it only ever uses one of them:
  *
- * Nothing here starts without a deliberate tap.
+ * - If there is music in public/music/, it plays that, in order, looping the
+ *   whole playlist, crossfading between tracks.
+ * - If there is not — and there is not, in the repository, because those are
+ *   commercial recordings — it synthesises a room instead: a low warm drone, a
+ *   breath of room tone, an occasional far-off bell, and the faintest scratch
+ *   of a nib timed to the strokes on screen.
+ *
+ * Nothing starts without a deliberate tap, because no browser will allow it to.
  */
+
+import { CROSSFADE, PLAYLIST, VOLUME, type Track } from '@/content/music';
 
 export type LetterAudio = {
   start: () => Promise<void>;
   stop: () => void;
-  /** Called as each pen stroke begins, with how long it will take. */
+  /** Called as each pen stroke begins. Ignored while music is playing. */
   pen: (durationSeconds: number) => void;
   playing: () => boolean;
+  /** What is actually sounding: a track title, or the synthesised fallback. */
+  now: () => string | null;
 };
 
 const DRONE = [110, 164.81, 220];
@@ -28,11 +36,93 @@ export function createLetterAudio(): LetterAudio {
   let active = false;
   let lastPen = 0;
 
+  // Music, when there is any.
+  let players: HTMLAudioElement[] = [];
+  let index = 0;
+  let watcher: number | null = null;
+  let musical = false;
+  let title: string | null = null;
+
+  async function canPlay(track: Track): Promise<boolean> {
+    try {
+      const response = await fetch(track.src, { method: 'HEAD' });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  function element(track: Track): HTMLAudioElement {
+    const audio = new Audio(track.src);
+    audio.preload = 'auto';
+    audio.volume = 0;
+    audio.crossOrigin = 'anonymous';
+    return audio;
+  }
+
+  /**
+   * Hands from one track to the next before the first has finished, and wraps
+   * back to the beginning of the playlist, so it plays for as long as the
+   * letter is open.
+   */
+  function playFrom(next: number) {
+    if (players.length === 0) return;
+    const current = players[next % players.length];
+    index = next % players.length;
+    title = PLAYLIST[index]?.title ?? null;
+
+    current.currentTime = 0;
+    current.volume = 0;
+    void current.play().catch(() => {});
+    fade(current, VOLUME, 2.5);
+
+    if (watcher !== null) window.clearInterval(watcher);
+    watcher = window.setInterval(() => {
+      if (!current.duration || Number.isNaN(current.duration)) return;
+      const left = current.duration - current.currentTime;
+      if (left <= CROSSFADE) {
+        fade(current, 0, CROSSFADE);
+        window.clearInterval(watcher!);
+        watcher = null;
+        window.setTimeout(() => current.pause(), CROSSFADE * 1000);
+        playFrom(index + 1);
+      }
+    }, 250);
+  }
+
+  function fade(audio: HTMLAudioElement, to: number, seconds: number) {
+    const from = audio.volume;
+    const started = performance.now();
+    const step = () => {
+      const t = Math.min(1, (performance.now() - started) / (seconds * 1000));
+      audio.volume = Math.max(0, Math.min(1, from + (to - from) * t));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    step();
+  }
+
   async function start() {
     if (active) return;
+    active = true;
+
+    const available: Track[] = [];
+    for (const track of PLAYLIST) {
+      if (await canPlay(track)) available.push(track);
+    }
+
+    if (available.length > 0) {
+      musical = true;
+      players = available.map(element);
+      playFrom(0);
+      return;
+    }
+
+    // No music to play, so make some.
+    musical = false;
+    title = 'room tone';
     const Ctor =
-      window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
 
     ctx = ctx ?? new Ctor();
@@ -46,7 +136,6 @@ export function createLetterAudio(): LetterAudio {
     buildDrone(ctx, master);
     buildRoomTone(ctx, master);
     scheduleBell();
-    active = true;
   }
 
   function buildDrone(context: AudioContext, out: GainNode) {
@@ -56,24 +145,24 @@ export function createLetterAudio(): LetterAudio {
     shelf.Q.value = 0.4;
     shelf.connect(out);
 
-    DRONE.forEach((frequency, index) => {
+    DRONE.forEach((frequency, position) => {
       const osc = context.createOscillator();
-      osc.type = index === 0 ? 'sine' : 'triangle';
+      osc.type = position === 0 ? 'sine' : 'triangle';
       osc.frequency.value = frequency;
 
       const gain = context.createGain();
-      gain.gain.value = [0.075, 0.04, 0.026][index];
+      gain.gain.value = [0.075, 0.04, 0.026][position];
 
       // A slow, uneven breath so the drone never sits perfectly still.
       const lfo = context.createOscillator();
-      lfo.frequency.value = 0.03 + index * 0.017;
+      lfo.frequency.value = 0.03 + position * 0.017;
       const lfoGain = context.createGain();
-      lfoGain.gain.value = [0.03, 0.018, 0.012][index];
+      lfoGain.gain.value = [0.03, 0.018, 0.012][position];
       lfo.connect(lfoGain).connect(gain.gain);
 
       // And a touch of drift in pitch, like two instruments not quite agreeing.
       const detune = context.createOscillator();
-      detune.frequency.value = 0.021 + index * 0.011;
+      detune.frequency.value = 0.021 + position * 0.011;
       const detuneGain = context.createGain();
       detuneGain.gain.value = 3.5;
       detune.connect(detuneGain).connect(osc.detune);
@@ -149,9 +238,9 @@ export function createLetterAudio(): LetterAudio {
   }
 
   function pen(durationSeconds: number) {
-    if (!active || !ctx || !master) return;
+    // With music playing, a nib on paper is just grit on top of it.
+    if (!active || musical || !ctx || !master) return;
     const now = ctx.currentTime;
-    // A nib is quiet and the strokes come fast; do not let them stack up.
     if (now - lastPen < 0.045) return;
     lastPen = now;
 
@@ -184,6 +273,18 @@ export function createLetterAudio(): LetterAudio {
   }
 
   function stop() {
+    active = false;
+    title = null;
+
+    if (watcher !== null) {
+      window.clearInterval(watcher);
+      watcher = null;
+    }
+    players.forEach((audio) => {
+      fade(audio, 0, 1.2);
+      window.setTimeout(() => audio.pause(), 1300);
+    });
+
     if (!ctx || !master) return;
     const now = ctx.currentTime;
     master.gain.cancelScheduledValues(now);
@@ -197,7 +298,6 @@ export function createLetterAudio(): LetterAudio {
 
     const dying = voices;
     voices = [];
-    active = false;
     window.setTimeout(() => {
       dying.forEach((voice) => {
         try {
@@ -211,5 +311,5 @@ export function createLetterAudio(): LetterAudio {
     }, 1800);
   }
 
-  return { start, stop, pen, playing: () => active };
+  return { start, stop, pen, playing: () => active, now: () => title };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { layoutText, naturalWidth, type LaidOutWord } from '@/lib/handwriting/layout';
 import { createRng, hashString, range } from '@/lib/rng';
@@ -59,6 +59,12 @@ export type HandwritingTextProps = {
   ready?: boolean;
   /** Nothing is written until this turns true. */
   start?: boolean;
+  /**
+   * Build the writing paused and hand the timeline over, so scroll can drive
+   * the pen instead of a clock.
+   */
+  scrub?: boolean;
+  onTimeline?: (timeline: gsap.core.Timeline) => void;
   /** Render the passage already written, for ghosts and echoes. */
   staticInk?: boolean;
   glow?: boolean;
@@ -91,6 +97,8 @@ export default function HandwritingText({
   className,
   ready = true,
   start = false,
+  scrub = false,
+  onTimeline,
   staticInk = false,
   glow = true,
   onWordStart,
@@ -106,8 +114,11 @@ export default function HandwritingText({
   const tier = usePerformanceTier();
 
   // Latest callbacks, so the timeline never has to be rebuilt to pick them up.
-  const handlers = useRef({ onWordStart, onWordEnd, onLineEnd, onComplete, onLayout });
-  handlers.current = { onWordStart, onWordEnd, onLineEnd, onComplete, onLayout };
+  const handlers = useRef({ onWordStart, onWordEnd, onLineEnd, onComplete, onLayout, onTimeline });
+  handlers.current = { onWordStart, onWordEnd, onLineEnd, onComplete, onLayout, onTimeline };
+
+  const nibRef = useRef<SVGCircleElement | null>(null);
+  const nibGradientId = `nib-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
 
   useIsomorphicLayoutEffect(() => {
     const host = hostRef.current;
@@ -179,7 +190,7 @@ export default function HandwritingText({
       return;
     }
 
-    if (!start) return;
+    if (!start && !scrub) return;
 
     const groups = Array.from(svg.querySelectorAll<SVGGElement>('[data-word]'));
     const reduced = tier.reducedMotion;
@@ -188,6 +199,7 @@ export default function HandwritingText({
 
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
+        paused: scrub,
         onComplete: () => handlers.current.onComplete?.(),
       });
 
@@ -213,11 +225,25 @@ export default function HandwritingText({
             at + 0.5,
           );
         });
+        // Reduced motion or not, scroll is still the playhead.
+        if (scrub) handlers.current.onTimeline?.(tl);
         return;
       }
 
       const rng = createRng(hashString(`${text}::timing`));
-      let cursor = delay;
+      let cursor = scrub ? 0 : delay;
+      const nib = nibRef.current;
+      const firstWord = layout.words[0];
+
+      if (nib && firstWord) {
+        gsap.set(nib, {
+          attr: {
+            cx: firstWord.bounds.x + firstWord.bounds.width / 2,
+            cy: firstWord.bounds.y + firstWord.bounds.height / 2,
+          },
+          opacity: 0,
+        });
+      }
 
       groups.forEach((group, index) => {
         const word = layout.words[index];
@@ -251,15 +277,26 @@ export default function HandwritingText({
         tl.to(group, { opacity: 1, duration: 0.16, ease: 'power1.out' }, wordEnd);
         tl.to(group, { opacity: 0.965, duration: 0.75, ease: 'power2.out' }, wordEnd + 0.16);
 
-        if (glow && tier.level !== 'low') {
-          tl.call(() => group.classList.add('hand__word--wet'), [], wordStart);
-          tl.fromTo(
-            group,
-            { '--wet-glow': 0.4, '--wet-blur': '7px' },
-            { '--wet-glow': 0, '--wet-blur': '2px', duration: 1.2, ease: 'power2.out' },
-            wordEnd,
+        if (nib && glow && tier.level !== 'low') {
+          // A point of warm light carried along with the pen. Every part of it
+          // is a tween, which is what lets the reader run the writing backwards
+          // without leaving a bloom stranded on a word that is no longer there.
+          tl.to(
+            nib,
+            {
+              attr: {
+                cx: word.bounds.x + word.bounds.width / 2,
+                cy: word.bounds.y + word.bounds.height / 2,
+              },
+              duration: Math.max(0.05, wordEnd - wordStart),
+              ease: 'none',
+            },
+            wordStart,
           );
-          tl.call(() => group.classList.remove('hand__word--wet'), [], wordEnd + 1.25);
+          if (index === 0) tl.to(nib, { opacity: 1, duration: 0.25 }, wordStart);
+          if (index === groups.length - 1) {
+            tl.to(nib, { opacity: 0, duration: 0.5, ease: 'power2.out' }, wordEnd);
+          }
         }
 
         tl.call(
@@ -271,17 +308,18 @@ export default function HandwritingText({
           wordEnd,
         );
 
-        cursor = wordEnd + range(rng, 0.07, 0.15);
+        cursor = wordEnd + (scrub ? 0.02 : range(rng, 0.07, 0.15));
         if (word.endsSourceLine) {
-          cursor += 0.34 + (pauseAfterLine?.[word.sourceLineIndex] ?? 0);
+          cursor += scrub ? 0.1 : 0.34 + (pauseAfterLine?.[word.sourceLineIndex] ?? 0);
         }
       });
+      if (scrub) handlers.current.onTimeline?.(tl);
     }, svg);
 
     return () => ctx.revert();
     // The timeline is a one-shot performance; only `start` may re-trigger it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, start, staticInk, tier.reducedMotion, tier.level]);
+  }, [layout, start, scrub, staticInk, tier.reducedMotion, tier.level]);
 
   return (
     <div ref={hostRef} className={className}>
@@ -295,6 +333,24 @@ export default function HandwritingText({
           aria-hidden="true"
           focusable="false"
         >
+          {glow ? (
+            <defs>
+              <radialGradient id={nibGradientId}>
+                <stop offset="0%" stopColor="rgb(255, 231, 193)" stopOpacity="0.5" />
+                <stop offset="40%" stopColor="rgb(255, 216, 168)" stopOpacity="0.14" />
+                <stop offset="100%" stopColor="rgb(255, 205, 150)" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+          ) : null}
+          {glow ? (
+            <circle
+              ref={nibRef}
+              className="hand__nib"
+              r={52}
+              fill={`url(#${nibGradientId})`}
+              opacity={0}
+            />
+          ) : null}
           {layout.words.map((word) => (
             <g key={word.index} data-word={word.index} style={{ opacity: 0 }}>
               {word.strokes.map((stroke, strokeIndex) => (

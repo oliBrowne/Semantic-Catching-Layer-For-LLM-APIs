@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { gsap } from '@/lib/scroll';
+import { gsap, ScrollTrigger } from '@/lib/scroll';
 import { SECRET_LABEL, SECRET_NOTE } from '@/content/letter';
 import Passage from './Passage';
 
@@ -14,11 +14,12 @@ import Passage from './Passage';
  * something by hand.
  */
 export default function SecretMessage({
-  start = false,
   ready = true,
+  at,
 }: {
-  start?: boolean;
   ready?: boolean;
+  /** Where along the reel the words are written, in viewports. */
+  at: number;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -80,12 +81,20 @@ export default function SecretMessage({
         <Passage
           text={SECRET_LABEL}
           align="center"
-          size={17}
-          speed={800}
+          size={18}
           ready={ready}
-          start={start}
+          scrub
           glow={false}
           className="secret__label"
+          onTimeline={(timeline) => {
+            ScrollTrigger.create({
+              animation: timeline,
+              start: () => window.innerHeight * at,
+              end: () => window.innerHeight * (at + 0.55),
+              scrub: 0.55,
+              invalidateOnRefresh: true,
+            });
+          }}
         />
         <span className="secret__rule" aria-hidden="true" />
       </button>

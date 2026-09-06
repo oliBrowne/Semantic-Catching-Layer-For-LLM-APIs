@@ -6,3 +6,5 @@ next-env.d.ts
 .DS_Store
 .env*.local
 /scratch/
+public/music/*.m4a
+public/music/*.mp3

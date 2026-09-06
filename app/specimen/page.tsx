@@ -1,21 +1,21 @@
 'use client';
 
+import DrawnMark from '@/components/DrawnMark';
 import HandwritingText from '@/components/HandwritingText';
+import { FLOURISH, HEART } from '@/lib/font/marks';
 
 /**
- * A type specimen, for tuning the alphabet.
+ * A type specimen, for tuning the alphabet and the two drawings.
  *
- * Not part of the letter — it exists so the glyphs can be looked at directly
- * while they are being drawn. Delete it if you would rather it were not there.
+ * Not part of the letter — it exists so the strokes can be looked at directly.
  */
 const SAMPLES = [
   'abcdefghijklm\nnopqrstuvwxyz',
   'ABCDEFGHIJKLM\nNOPQRSTUVWXYZ',
   '0123456789\n, . ; : ! ? - ’ ( ) ♡',
-  'I have passed by many eyes,\nbut yours were the only ones\nthat felt like a place to stay,',
-  'my heart will always know you.',
-  'It will always be you. ♡',
-  'Yours,\nOliver',
+  'I have passed by many eyes,\nbut yours were the only ones',
+  'It will always be you.',
+  'Yours,',
 ];
 
 export default function SpecimenPage() {
@@ -26,9 +26,18 @@ export default function SpecimenPage() {
           <HandwritingText text={sample} size={26} staticInk glow={false} />
         </section>
       ))}
+      <section className="specimen__row specimen__mark">
+        <HandwritingText text="Oliver" size={40} slant={14} align="center" staticInk glow={false} />
+        <DrawnMark mark={FLOURISH} start />
+      </section>
+      <section className="specimen__row specimen__mark specimen__mark--small">
+        <DrawnMark mark={HEART} start />
+      </section>
       <style>{`
         .specimen { padding: 4rem 1.5rem; display: grid; gap: 3.5rem; max-width: 40rem; margin: 0 auto; }
         .specimen__row { padding-bottom: 2rem; border-bottom: 1px solid rgba(239,228,209,0.07); }
+        .specimen__mark { width: 22rem; }
+        .specimen__mark--small { width: 12rem; }
       `}</style>
     </main>
   );

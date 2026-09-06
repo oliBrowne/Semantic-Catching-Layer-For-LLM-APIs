@@ -10,24 +10,32 @@ written again — one stroke at a time, by a hand you cannot see.
 
 ## What it does
 
+- **The page never moves.** The frame is fixed to the window. Below it is an
+  empty strip of scroll that exists only to be travelled along, and that travel
+  is spent on what happens *inside* the frame. You are not scrolling past a
+  page; you are turning the handle on one.
+- **Scroll is the pen.** The writing is not on a timer — it is scrubbed. Move
+  your thumb and the hand moves; stop and it stops; go back and the ink comes
+  off the page. The same is true of the heart, the photograph and the name.
 - **The poem is genuinely handwritten.** Every glyph is a pen path, not a font
   outline, so the strokes are drawn in the order and direction a hand would
   move. No typewriter reveal, no per-character fades, no cursor.
-- **A stanza is read one line at a time.** Each line is written alone in the
-  middle of the screen, held long enough to land, and gone before the next one
-  begins — except the last, which stays.
+- **Two or three lines at a time**, so a thought arrives whole. Each card is
+  written in the middle of the frame, held, and lifts away as the next begins.
 - **Nothing repeats exactly.** Letter size, slant, baseline, pressure and ink
   density all wander, seeded from the words themselves so the same passage
   always has the same quirks.
 - **The room reacts.** Dust drifts toward the words as the first stanza closes,
   stops dead on *like yours did*, and a single point of deep red gathers behind
   *my heart will always know you* before scattering into embers.
+- **A heart is drawn, not shown.** Six real pen strokes on the last screen:
+  round the outside, back over the left because the first pass was thin, some
+  shading, and a catch of light.
 - **The photograph develops.** One picture, revealed as a band behind the last
   sentence and opened outward only if the reader keeps going.
-- **Sound is opt-in and synthesised.** A warm drone, a breath of room tone, an
-  occasional distant bell, and the faintest scratch of a nib timed to the
-  strokes on screen. Nothing plays until it is asked for; there are no audio
-  files to download.
+- **A signature, in the letter's own hand**, finished with one long swash that
+  carries past the end of the name — because the person who wrote the letter is
+  the person signing it.
 
 ---
 
@@ -77,7 +85,24 @@ The three constants at the top of **`components/StanzaReader.tsx`** set the
 rhythm underneath that: the beat every line is given, how long a finished line
 takes to dissolve, and how much dark there is before the next one starts.
 
-### 3. The last thing
+### 3. The music
+
+Put two files in **`public/music/`**, named `01.m4a` and `02.m4a`. They are not
+in this repository and cannot be — they are commercial recordings — so use your
+own copies. `.m4a` and `.mp3` are the safe formats; `.ogg` will not play on iOS.
+Titles and filenames are in `content/music.ts`.
+
+With no files there, the piece falls back to a room tone it synthesises for
+itself: a low drone, a breath of air, a far-off bell. Nothing errors.
+
+**No browser will start audio without a gesture**, so the first tap anywhere
+starts it and the `♫` control at the top stops it again. On iOS a scroll is not
+a gesture for this purpose — it genuinely has to be a tap.
+
+Keep an eye on file size: these ship with the site, and a five-minute track at
+128kbps is about 5 MB for someone opening this on mobile data.
+
+### 4. The last thing
 
 **`components/SecretMessage.tsx`** contains a placeholder panel behind the
 *one more thing* link at the very bottom. Put a voice note there:
@@ -144,13 +169,26 @@ Passages auto-fit: the hand shrinks until the longest written line fits the
 column, and only once that would stop being legible does it allow a line to
 wrap.
 
-**`components/StanzaReader.tsx`** reads a stanza a line at a time. Every line
-is mounted from the start and stacked in a single grid cell, so they all occupy
-one place on screen and hand over without anything moving; each is sized to the
-longest line of the whole stanza rather than to itself, so the hand does not
-change size between them. Mounting them all up front is what lets a cue ask
-where a word on a later line is going to be before that line is written — which
-is how the ember knows where to gather.
+**`lib/reel.ts` and `lib/schedule.ts`** lay the whole piece out along the
+scrollbar, measured in viewports. The one number that matters is
+`SCROLL_PER_CHARACTER` — how far the hand moves for a given movement of the
+thumb. Holding it constant across every card is what stops a short line racing
+past and a long one dragging.
+
+**`components/Card.tsx`** is two or three lines of the letter. It builds its
+writing as a paused timeline and hands it to a ScrollTrigger with `scrub`, so
+the scrollbar is the playhead. Every card occupies the same square of the fixed
+frame, so one hands over to the next without anything travelling across the
+screen to get there.
+
+**`components/DrawnMark.tsx`** does the same for the two things that are not
+letters: the heart and the swash under the signature, both in
+`lib/font/marks.ts`.
+
+Because the reader can run the writing backwards, everything visual has to be a
+tween rather than a one-shot. That is why the warm glow is a single point of
+light carried along with the pen rather than a bloom left on each finished
+word — a bloom cannot survive being scrolled back over.
 
 ---
 

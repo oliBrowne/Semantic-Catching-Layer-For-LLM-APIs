@@ -5,13 +5,10 @@ import { useEffect, useRef, useState } from 'react';
 // behaviour, and importing from there would pull ScrollTrigger in with it.
 import gsap from 'gsap';
 import { OPENING } from '@/content/letter';
+import { INTRO_SCROLL } from '@/lib/schedule';
 import Passage from './Passage';
 import SoundControl from './SoundControl';
 
-/**
- * Black, for long enough that it stops feeling like a loading screen and
- * starts feeling like a room with the lights off. Then a hand starts writing.
- */
 /**
  * How long to hold the black before the first line.
  *
@@ -30,80 +27,69 @@ function openingBeat(): number {
   return Math.max(0.15, FULL - (performance.now() - painted) / 1000);
 }
 
+/**
+ * Black, for long enough that it stops feeling like a loading screen and
+ * starts feeling like a room with the lights off. Then a hand starts writing.
+ *
+ * This is the one part of the piece that is not on the scrollbar — it has to
+ * come alive on its own, because at this point the reader has done nothing but
+ * point a camera at a piece of paper.
+ */
 export default function IntroScene() {
   const innerRef = useRef<HTMLDivElement | null>(null);
   const beaconRef = useRef<HTMLDivElement | null>(null);
   const [secondLine, setSecondLine] = useState(false);
-  const [done, setDone] = useState(false);
   const [beat] = useState(openingBeat);
 
+  // It hands over to the letter as soon as the reader starts moving.
   useEffect(() => {
-    if (!done) return;
     const inner = innerRef.current;
     const beacon = beaconRef.current;
-    if (!inner || !beacon) return;
+    if (!inner) return;
 
-    const tl = gsap.timeline({ delay: 1.5 });
-    tl.to(inner, { opacity: 0, duration: 2.6, ease: 'power2.inOut' });
-    tl.fromTo(
-      beacon,
-      { opacity: 0 },
-      { opacity: 1, duration: 2.2, ease: 'power2.out' },
-      '-=1.4',
-    );
-    return () => {
-      tl.kill();
-    };
-  }, [done]);
-
-  // The beacon has done its job the moment the letter is being read.
-  useEffect(() => {
     const onScroll = () => {
-      if (window.scrollY > 40 && beaconRef.current) {
-        gsap.to(beaconRef.current, { opacity: 0, duration: 1.1, ease: 'power2.out' });
-        window.removeEventListener('scroll', onScroll);
-      }
+      const progress = Math.min(1, window.scrollY / (window.innerHeight * INTRO_SCROLL));
+      gsap.set(inner, { opacity: 1 - Math.min(1, progress * 1.9), y: -progress * 40 });
+      if (beacon) gsap.set(beacon, { opacity: 1 - Math.min(1, progress * 4) });
     };
+
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   return (
-    <section className="scene intro" style={{ '--scene-scroll': 1.9 } as React.CSSProperties}>
-      <div className="scene__stage">
-        <div className="intro__sound">
-          <SoundControl />
-        </div>
-
-        <div ref={innerRef} className="intro__inner">
-          <Passage
-            text={OPENING.first}
-            align="center"
-            size={40}
-            speed={600}
-            delay={beat}
-            slant={7}
-            start
-            onComplete={() => setSecondLine(true)}
-          />
-          <Passage
-            text={OPENING.second}
-            align="center"
-            size={19}
-            speed={1350}
-            delay={1.0}
-            lineHeight={165}
-            pauseAfterLine={{ 0: 0.5 }}
-            start={secondLine}
-            onComplete={() => setDone(true)}
-            className="intro__second"
-          />
-        </div>
-
-        <div ref={beaconRef} className="intro__beacon" aria-hidden="true">
-          <span className="intro__beacon-dot" />
-        </div>
+    <>
+      <div className="intro__sound">
+        <SoundControl />
       </div>
-    </section>
+
+      <div ref={innerRef} className="card card--centre intro">
+        <Passage
+          text={OPENING.first}
+          align="center"
+          size={44}
+          speed={600}
+          delay={beat}
+          slant={7}
+          start
+          onComplete={() => setSecondLine(true)}
+        />
+        <Passage
+          text={OPENING.second}
+          align="center"
+          size={20}
+          speed={1350}
+          delay={1.0}
+          lineHeight={165}
+          pauseAfterLine={{ 0: 0.5 }}
+          start={secondLine}
+          className="intro__second"
+        />
+      </div>
+
+      <div ref={beaconRef} className="intro__beacon" aria-hidden="true">
+        <span className="intro__beacon-dot" />
+      </div>
+    </>
   );
 }
