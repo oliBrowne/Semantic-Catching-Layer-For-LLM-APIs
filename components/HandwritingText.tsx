@@ -346,6 +346,11 @@ export default function HandwritingText({
             <circle
               ref={nibRef}
               className="hand__nib"
+              // Explicit defaults: GSAP restores an attribute to what it found
+              // on revert, and what it found on a circle without these was
+              // nothing at all, which is not a valid length.
+              cx={0}
+              cy={0}
               r={52}
               fill={`url(#${nibGradientId})`}
               opacity={0}

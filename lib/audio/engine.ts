@@ -141,7 +141,7 @@ export function createLetterAudio(): LetterAudio {
 
     master = ctx.createGain();
     master.gain.setValueAtTime(0.0001, ctx.currentTime);
-    master.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 4);
+    master.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 4);
     master.connect(ctx.destination);
 
     buildDrone(ctx, master);

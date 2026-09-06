@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { gsap, ScrollTrigger } from '@/lib/scroll';
+import gsap from 'gsap';
 import { SECRET_LABEL, SECRET_NOTE } from '@/content/letter';
 import Passage from './Passage';
 
@@ -13,14 +13,7 @@ import Passage from './Passage';
  * itself underneath them when you reach for it, the way you would underline
  * something by hand.
  */
-export default function SecretMessage({
-  ready = true,
-  at,
-}: {
-  ready?: boolean;
-  /** Where along the reel the words are written, in viewports. */
-  at: number;
-}) {
+export default function SecretMessage() {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -82,19 +75,10 @@ export default function SecretMessage({
           text={SECRET_LABEL}
           align="center"
           size={18}
-          ready={ready}
-          scrub
+          speed={900}
+          start
           glow={false}
           className="secret__label"
-          onTimeline={(timeline) => {
-            ScrollTrigger.create({
-              animation: timeline,
-              start: () => window.innerHeight * at,
-              end: () => window.innerHeight * (at + 0.55),
-              scrub: 0.55,
-              invalidateOnRefresh: true,
-            });
-          }}
         />
         <span className="secret__rule" aria-hidden="true" />
       </button>

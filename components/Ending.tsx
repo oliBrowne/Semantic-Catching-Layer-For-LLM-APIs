@@ -2,81 +2,62 @@
 
 import Image from 'next/image';
 import { useRef, useState } from 'react';
-import { gsap, ScrollTrigger } from '@/lib/scroll';
+import gsap from 'gsap';
 import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
 import { FINAL_LINE, SIGNATURE } from '@/content/letter';
 import { HEART, SIGNATURE_MARK } from '@/lib/font/marks';
-import { SCHEDULE } from '@/lib/schedule';
 import { useAtmosphere } from '@/lib/particles/context';
 import DrawnMark from './DrawnMark';
 import Passage from './Passage';
-import SecretMessage from './SecretMessage';
 import photograph from '@/public/photo.jpg';
 
-const { ending } = SCHEDULE;
+/** Each beat of the ending, and how long the one before it is held. */
+type Beat = 'line' | 'heart' | 'photo' | 'sign' | 'name' | 'done';
 
 /**
  * The end of the letter.
  *
  * One sentence, a heart drawn underneath it by hand, the only photograph in
- * the piece developing up behind them both, and a name. All of it on the
- * scrollbar: nothing here happens on a clock.
+ * the piece developing up behind them both, and a name. It runs itself
+ * through, and when the name is finished it says so, which is what gives the
+ * reader the page back.
  */
-export default function Ending() {
+export default function Ending({
+  active,
+  onFinished,
+}: {
+  active: boolean;
+  onFinished: () => void;
+}) {
   const lineRef = useRef<HTMLDivElement | null>(null);
   const heartRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLDivElement | null>(null);
   const curtainTopRef = useRef<HTMLDivElement | null>(null);
   const curtainBottomRef = useRef<HTMLDivElement | null>(null);
-  const signatureRef = useRef<HTMLDivElement | null>(null);
-  const [near, setNear] = useState(false);
-  const [stilled, setStilled] = useState(false);
+  const [beat, setBeat] = useState<Beat | null>(null);
   const atmosphere = useAtmosphere();
-
-  const vh = () => window.innerHeight;
-
-  const onLineTimeline = (timeline: gsap.core.Timeline) => {
-    ScrollTrigger.create({
-      animation: timeline,
-      start: () => vh() * ending.line.at,
-      end: () => vh() * (ending.line.at + ending.line.write),
-      scrub: 0.55,
-      invalidateOnRefresh: true,
-      onLeave: () => {
-        // Everything in the air stops once the last sentence is complete.
-        if (stilled) return;
-        setStilled(true);
-        atmosphere.hold(1000 * 60 * 60);
-        atmosphere.setDensity(0.04);
-        gsap.to('.atmosphere__dim', { opacity: 0.34, duration: 6, ease: 'power2.inOut' });
-      },
-    });
-  };
-
-  const onHeartTimeline = (timeline: gsap.core.Timeline) => {
-    ScrollTrigger.create({
-      animation: timeline,
-      start: () => vh() * ending.heart.from,
-      end: () => vh() * ending.heart.to,
-      scrub: 0.55,
-      invalidateOnRefresh: true,
-    });
-  };
-
-  const onSignatureTimeline = (timeline: gsap.core.Timeline) => {
-    ScrollTrigger.create({
-      animation: timeline,
-      // The name and its swash are one drawing, so they get one long stretch
-      // of scroll: the capital, the run through the rest of it, the dot, and
-      // then the stroke underneath that finishes it.
-      start: () => vh() * (ending.signature + 0.55),
-      end: () => vh() * (ending.flourish + 0.9),
-      scrub: 0.6,
-      invalidateOnRefresh: true,
-    });
-  };
+  const finished = useRef(false);
 
   useIsomorphicLayoutEffect(() => {
+    if (active && beat === null) setBeat('line');
+  }, [active, beat]);
+
+  /** Everything in the air stops once the last sentence is complete. */
+  const onLineWritten = () => {
+    atmosphere.hold(1000 * 60 * 60);
+    atmosphere.setDensity(0.04);
+    gsap.to('.atmosphere__dim', { opacity: 0.34, duration: 6, ease: 'power2.inOut', delay: 1 });
+    gsap.delayedCall(2.6, () => setBeat('heart'));
+  };
+
+  const onHeartDrawn = () => {
+    gsap.delayedCall(1.4, () => setBeat('photo'));
+  };
+
+  // The photograph is uncovered by two curtains sliding apart: a band behind
+  // the sentence first, then all of it. Transforms, so the compositor does it.
+  useIsomorphicLayoutEffect(() => {
+    if (beat !== 'photo') return;
     const top = curtainTopRef.current;
     const bottom = curtainBottomRef.current;
     const image = imageRef.current;
@@ -84,92 +65,33 @@ export default function Ending() {
     const heart = heartRef.current;
     if (!top || !bottom || !image || !line || !heart) return;
 
-    const ctx = gsap.context(() => {
-      ScrollTrigger.create({
-        start: () => Math.max(0, vh() * (ending.line.at - 1.6)),
-        end: () => vh() * (ending.secret + 2),
-        onToggle: (self) => setNear(self.isActive || near),
-        onRefresh: (self) => {
-          if (self.progress > 0) setNear(true);
-        },
-      });
-
-      // The photograph is uncovered by two curtains sliding apart: a band
-      // behind the sentence first, then, if the reader keeps going, all of it.
-      const setTop = gsap.quickSetter(top, 'y', 'px');
-      const setBottom = gsap.quickSetter(bottom, 'y', 'px');
-      const BAND = 0.038;
-      const OPEN = 0.62;
-      const KNEE = 0.24;
-      const reveal = { at: 0 };
-      const apply = () => {
-        const t = reveal.at;
-        const half =
-          t < KNEE ? (t / KNEE) * BAND : BAND + ((t - KNEE) / (1 - KNEE)) * (OPEN - BAND);
-        const px = vh() * half;
-        setTop(-px);
-        setBottom(px);
-      };
-      apply();
-
-      gsap.to(reveal, {
-        at: 1,
-        ease: 'none',
-        onUpdate: apply,
-        scrollTrigger: {
-          start: () => vh() * ending.photo.band,
-          end: () => vh() * ending.photo.open,
-          scrub: 0.7,
-          invalidateOnRefresh: true,
-          onRefresh: apply,
-        },
-      });
-
-      // A drift so slow it registers as the room breathing, not a zoom.
-      gsap.fromTo(
-        image,
-        { scale: 1 },
-        {
-          scale: 1.04,
-          ease: 'none',
-          scrollTrigger: {
-            start: () => vh() * ending.photo.band,
-            end: () => vh() * (ending.secret - 1),
-            scrub: 1.2,
-            invalidateOnRefresh: true,
-          },
-        },
-      );
-
-      // The sentence and the heart give way to the name.
-      gsap.to([line, heart], {
-        opacity: 0,
-        y: -46,
-        ease: 'none',
-        scrollTrigger: {
-          start: () => vh() * ending.leave.from,
-          end: () => vh() * ending.leave.to,
-          scrub: 0.6,
-          invalidateOnRefresh: true,
-        },
-      });
+    const vh = window.innerHeight;
+    const tl = gsap.timeline();
+    tl.to([top, bottom], {
+      y: (i) => (i === 0 ? -vh * 0.038 : vh * 0.038),
+      duration: 1.6,
+      ease: 'power2.out',
     });
+    tl.to(
+      [top, bottom],
+      { y: (i) => (i === 0 ? -vh * 0.62 : vh * 0.62), duration: 7, ease: 'sine.inOut' },
+      '+=1.6',
+    );
+    tl.fromTo(image, { scale: 1 }, { scale: 1.04, duration: 22, ease: 'none' }, 0);
+    // The sentence and the heart give way to the name.
+    tl.to([line, heart], { opacity: 0, y: -40, duration: 2, ease: 'power2.inOut' }, '-=2.4');
+    tl.call(() => setBeat('sign'));
 
-    return () => ctx.revert();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      tl.kill();
+    };
+  }, [beat]);
 
   return (
     <>
       <div className="photo" aria-hidden="true">
         <div ref={imageRef} className="photo__frame">
-          <Image
-            src={photograph}
-            alt=""
-            className="photo__image"
-            sizes="100vw"
-            placeholder="blur"
-          />
+          <Image src={photograph} alt="" className="photo__image" sizes="100vw" placeholder="blur" />
         </div>
         <div className="photo__warmth" />
         <div className="photo__grain" />
@@ -184,49 +106,55 @@ export default function Ending() {
           align="center"
           size={31}
           minSize={24}
-          ready={near}
-          scrub
-          onTimeline={onLineTimeline}
+          speed={950}
+          ready={active}
+          start={beat !== null}
+          onComplete={onLineWritten}
         />
       </div>
 
       <div ref={heartRef} className="ending__heart">
-        {near ? <DrawnMark mark={HEART} scrub strokeWidth={3.6} onTimeline={onHeartTimeline} /> : null}
-      </div>
-
-      <div ref={signatureRef} className="ending__signature">
-        <Passage
-          text={SIGNATURE.first}
-          align="center"
-          size={24}
-          ready={near}
-          scrub
-          onTimeline={(timeline) => {
-            ScrollTrigger.create({
-              animation: timeline,
-              start: () => vh() * ending.signature,
-              end: () => vh() * (ending.signature + 0.45),
-              scrub: 0.55,
-              invalidateOnRefresh: true,
-            });
-          }}
-          className="ending__yours"
-        />
-        {near ? (
+        {beat !== null ? (
           <DrawnMark
-            mark={SIGNATURE_MARK}
-            className="ending__name"
-            scrub
-            strokeWidth={2.8}
-            speed={900}
-            onTimeline={onSignatureTimeline}
-            ariaLabel={SIGNATURE.second}
+            mark={HEART}
+            start={beat === 'heart' || beat === 'photo' || beat === 'sign' || beat === 'name'}
+            speed={150}
+            strokeWidth={3.6}
+            onComplete={onHeartDrawn}
           />
         ) : null}
       </div>
 
-      <div className="ending__secret">
-        <SecretMessage ready={near} at={ending.secret} />
+      <div className="ending__signature">
+        <Passage
+          text={SIGNATURE.first}
+          align="center"
+          size={24}
+          speed={900}
+          ready={active}
+          start={beat === 'sign' || beat === 'name' || beat === 'done'}
+          onComplete={() => gsap.delayedCall(1.1, () => setBeat('name'))}
+          className="ending__yours"
+        />
+        {beat !== null ? (
+          <DrawnMark
+            mark={SIGNATURE_MARK}
+            className="ending__name"
+            start={beat === 'name' || beat === 'done'}
+            speed={330}
+            strokeWidth={2.8}
+            ariaLabel={SIGNATURE.second}
+            onComplete={() => {
+              if (finished.current) return;
+              finished.current = true;
+              // The letter has been said. Give the reader the page back.
+              gsap.delayedCall(2.8, () => {
+                setBeat('done');
+                onFinished();
+              });
+            }}
+          />
+        ) : null}
       </div>
     </>
   );

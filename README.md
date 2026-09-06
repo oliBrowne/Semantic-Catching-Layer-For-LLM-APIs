@@ -10,13 +10,12 @@ written again — one stroke at a time, by a hand you cannot see.
 
 ## What it does
 
-- **The page never moves.** The frame is fixed to the window. Below it is an
-  empty strip of scroll that exists only to be travelled along, and that travel
-  is spent on what happens *inside* the frame. You are not scrolling past a
-  page; you are turning the handle on one.
-- **Scroll is the pen.** The writing is not on a timer — it is scrubbed. Move
-  your thumb and the hand moves; stop and it stops; go back and the ink comes
-  off the page. The same is true of the heart, the photograph and the name.
+- **It plays itself, and the page cannot be scrolled while it does.** Not by
+  cancelling touch events — while the letter is being written the document is
+  exactly one screen tall, so there is nowhere for it to go. The frame is fixed
+  to the window and nothing moves down the page.
+- **The scroll comes back when the letter is finished**, and what is down there
+  is the whole poem, written out again all at once.
 - **The poem is genuinely handwritten.** Every glyph is a pen path, not a font
   outline, so the strokes are drawn in the order and direction a hand would
   move. No typewriter reveal, no per-character fades, no cursor.
@@ -178,19 +177,24 @@ Passages auto-fit: the hand shrinks until the longest written line fits the
 column, and only once that would stop being legible does it allow a line to
 wrap.
 
-**`lib/reel.ts` and `lib/schedule.ts`** lay the whole piece out along the
-scrollbar, measured in viewports. The one number that matters is
-`SCROLL_PER_CHARACTER` — how far the hand moves for a given movement of the
-thumb. Holding it constant across every card is what stops a short line racing
-past and a long one dragging.
+**`components/Letter.tsx`** is the sequence. It holds an index, hands it to one
+card at a time, and each card reports back when it has been written, held and
+has left — which is what moves the index on. When the last of it has been said
+it tells `Experience`, and that is the moment the page grows underneath the
+frame and the reader gets their scroll back.
 
-**`components/Card.tsx`** is two or three lines of the letter. It builds its
-writing as a paused timeline and hands it to a ScrollTrigger with `scrub`, so
-the scrollbar is the playhead. Every card occupies the same square of the fixed
-frame, so one hands over to the next without anything travelling across the
-screen to get there.
+**`components/Card.tsx`** is two or three lines of the letter. Every card
+occupies the same square of the fixed frame, so one hands over to the next
+without anything travelling across the screen to get there. `HOLD`, `FADE` and
+`GAP` at the top of it are the rhythm; `linger` in `content/letter.ts` is the
+per-card emphasis on top.
 
-**`components/DrawnMark.tsx`** does the same for the two drawings that are not
+**`components/Finale.tsx`** brings every line back at the very end: twenty
+hands starting a third of a second apart, cascading down until the poem is
+standing there complete, which is the one thing the piece never shows until
+then.
+
+**`components/DrawnMark.tsx`** draws the two things that are not
 letters — the heart and the signature — both in `lib/font/marks.ts`.
 
 The signature is worth a note if you ever want to change it. Cursive lives in
@@ -200,10 +204,10 @@ without a hook on the `v`, a closed loop on the `e` and a shoulder on the `r`,
 the whole thing came out as an even row of humps that said "Olivam". Space them
 generously and turn the corners rather than cornering them.
 
-Because the reader can run the writing backwards, everything visual has to be a
-tween rather than a one-shot. That is why the warm glow is a single point of
-light carried along with the pen rather than a bloom left on each finished
-word — a bloom cannot survive being scrolled back over.
+The warm glow is a single point of light carried along with the pen rather than
+a bloom left on each finished word. It began as a workaround — a bloom could not
+survive the writing being run backwards, which it could at one point — and
+turned out to be the better idea anyway.
 
 ---
 
@@ -214,7 +218,14 @@ Measured on the built site, iPhone 13 profile, CPU throttled 6x:
 | | fast 4G | slow 4G |
 |---|---|---|
 | first paint | 0.45s | 1.0s |
-| **first stroke of ink** | **1.6s** | **3.7s** |
+| **first stroke of ink** | **1.5s** | **3.7s** |
+
+The letter runs about three and a half minutes and cannot be scrolled while it
+does — that is deliberate, but it is a long time to hold someone, so know the
+number. The pacing lives in `linger` per card in `content/letter.ts` and in
+`HOLD`, `FADE` and `GAP` at the top of `components/Card.tsx`. Anyone who has
+asked for reduced motion gets the same letter in the same order with the waits
+cut to 40%.
 
 Three things get it there, and they are worth knowing about before changing
 anything near them:
@@ -224,8 +235,8 @@ anything near them:
   page. Each passage now waits for its `Scene` to report `near` (within a screen
   of the viewport) before laying itself out.
 - **The letter loads separately from the opening.** `components/Letter.tsx` and
-  everything it pulls in — ScrollTrigger included — is a dynamic import, because
-  none of it is needed for `for you.` to start being written.
+  everything it pulls in is a dynamic import, because none of it is needed for
+  `for you.` to start being written.
 - **The opening beat adapts.** The 800ms of black is measured from first paint
   rather than from whenever the script finished, so a slow phone does not spend
   its wait and then wait again.

@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 // behaviour, and importing from there would pull ScrollTrigger in with it.
 import gsap from 'gsap';
 import { OPENING } from '@/content/letter';
-import { INTRO_SCROLL } from '@/lib/schedule';
 import Passage from './Passage';
 import SoundControl from './SoundControl';
 
@@ -35,27 +34,31 @@ function openingBeat(): number {
  * come alive on its own, because at this point the reader has done nothing but
  * point a camera at a piece of paper.
  */
-export default function IntroScene() {
+export default function IntroScene({ onFinished }: { onFinished: () => void }) {
   const innerRef = useRef<HTMLDivElement | null>(null);
-  const beaconRef = useRef<HTMLDivElement | null>(null);
   const [secondLine, setSecondLine] = useState(false);
   const [beat] = useState(openingBeat);
+  const handOver = useRef(onFinished);
+  handOver.current = onFinished;
 
-  // It hands over to the letter as soon as the reader starts moving.
+  // Once both lines are down it hands over to the letter on its own.
   useEffect(() => {
+    if (!secondLine) return;
     const inner = innerRef.current;
-    const beacon = beaconRef.current;
     if (!inner) return;
-
-    const onScroll = () => {
-      const progress = Math.min(1, window.scrollY / (window.innerHeight * INTRO_SCROLL));
-      gsap.set(inner, { opacity: 1 - Math.min(1, progress * 1.9), y: -progress * 40 });
-      if (beacon) gsap.set(beacon, { opacity: 1 - Math.min(1, progress * 4) });
+    const tween = gsap.to(inner, {
+      opacity: 0,
+      y: -34,
+      duration: 2.2,
+      delay: 2.6,
+      ease: 'power2.inOut',
+      // Only now does the letter proper begin. Nothing overlaps the opening.
+      onComplete: () => handOver.current(),
+    });
+    return () => {
+      tween.kill();
     };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [secondLine]);
 
   return (
     <>
@@ -68,7 +71,7 @@ export default function IntroScene() {
           text={OPENING.first}
           align="center"
           size={44}
-          speed={600}
+          speed={520}
           delay={beat}
           slant={7}
           start
@@ -78,7 +81,7 @@ export default function IntroScene() {
           text={OPENING.second}
           align="center"
           size={20}
-          speed={1350}
+          speed={1150}
           delay={1.0}
           lineHeight={165}
           pauseAfterLine={{ 0: 0.5 }}
@@ -87,9 +90,6 @@ export default function IntroScene() {
         />
       </div>
 
-      <div ref={beaconRef} className="intro__beacon" aria-hidden="true">
-        <span className="intro__beacon-dot" />
-      </div>
     </>
   );
 }
