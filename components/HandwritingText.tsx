@@ -132,7 +132,9 @@ export default function HandwritingText({
     });
   }, [text, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
 
-  const pointOf = useRef((word: LaidOutWord): { x: number; y: number } | null => null);
+  // Resolved fresh on every call: a word's place on screen depends on where
+  // the sticky stage happens to be at the moment something asks.
+  const pointOf = useRef<(word: LaidOutWord) => { x: number; y: number } | null>(() => null);
   pointOf.current = (word: LaidOutWord) => {
     const node = svgRef.current;
     if (!node || !layout) return null;

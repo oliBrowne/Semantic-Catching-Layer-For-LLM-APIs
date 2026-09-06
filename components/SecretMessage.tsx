@@ -109,7 +109,7 @@ export default function SecretMessage({ start = false }: { start?: boolean }) {
                 text={SECRET_NOTE}
                 align="center"
                 size={19}
-                speed={620}
+                speed={820}
                 start={open}
                 className="secret__note"
               />

@@ -22,7 +22,7 @@ export default function IntroScene() {
     const beacon = beaconRef.current;
     if (!inner || !beacon) return;
 
-    const tl = gsap.timeline({ delay: 1.9 });
+    const tl = gsap.timeline({ delay: 1.5 });
     tl.to(inner, { opacity: 0, duration: 2.6, ease: 'power2.inOut' });
     tl.fromTo(
       beacon,
@@ -69,8 +69,8 @@ export default function IntroScene() {
             text={OPENING.second}
             align="center"
             size={19}
-            speed={780}
-            delay={1.15}
+            speed={880}
+            delay={1.0}
             lineHeight={165}
             start={secondLine}
             onComplete={() => setDone(true)}

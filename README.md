@@ -89,8 +89,12 @@ Deploy anywhere static. A GitHub Pages workflow is included at
 `.github/workflows/deploy.yml`:
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. Push to `main`. The workflow sets `BASE_PATH` to `/<repo-name>` for you.
-3. Generate a QR code for the published URL and print it inside the letter.
+2. Get this onto `main` — the workflow builds that branch. (Renaming the
+   branch under **Settings → Branches** is enough if there is nothing else
+   in the repository yet.)
+3. The workflow sets `BASE_PATH` to `/<repo-name>` for you, so the published
+   URL is `https://<user>.github.io/<repo-name>/`.
+4. Generate a QR code for that URL and print it inside the letter.
 
 To serve from a domain root instead, build with `BASE_PATH=` (empty).
 

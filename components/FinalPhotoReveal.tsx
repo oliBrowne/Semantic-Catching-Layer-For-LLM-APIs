@@ -21,12 +21,18 @@ export default function FinalPhotoReveal() {
   const photoRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLDivElement | null>(null);
   const lineRef = useRef<HTMLDivElement | null>(null);
-  const [signing, setSigning] = useState(false);
+  // Signing needs both things to be true: the reader has gone far enough, and
+  // the sentence above is actually finished. Someone scrolling quickly must not
+  // be handed the signature while the last line is still being written.
+  const [scrolledToSign, setScrolledToSign] = useState(false);
+  const [lineWritten, setLineWritten] = useState(false);
   const [signingName, setSigningName] = useState(false);
+  const signing = scrolledToSign && lineWritten;
   const atmosphere = useAtmosphere();
 
   /** Everything stops when the last sentence lands. */
   const onLastLine = () => {
+    setLineWritten(true);
     atmosphere.hold(1000 * 60 * 60);
     atmosphere.setDensity(0.04);
     gsap.to(document.documentElement, {
@@ -106,7 +112,7 @@ export default function FinalPhotoReveal() {
         trigger: section,
         start: () => `top top-=${vh() * 3.4}`,
         once: true,
-        onEnter: () => setSigning(true),
+        onEnter: () => setScrolledToSign(true),
       });
     }, section);
 

@@ -76,6 +76,9 @@ body {
 .atmosphere {
   position: fixed;
   inset: 0;
+  /* The grain and the vignette are deliberately larger than the screen so
+     their edges never drift into view; this is what keeps that off the page. */
+  overflow: hidden;
   pointer-events: none;
   z-index: 40;
 }
@@ -155,6 +158,9 @@ body {
   position: sticky;
   top: 0;
   height: 100svh;
+  /* Halos and glows bleed past the column on purpose. They stop at the edge of
+     the screen rather than widening the document. */
+  overflow: hidden;
   display: grid;
   place-items: center;
   padding:
@@ -607,7 +613,7 @@ body {
   z-index: 60;
   place-items: center;
   padding: 2rem;
-  background: rgba(4, 4, 4, 0.92);
+  background: rgba(4, 4, 4, 0.965);
 }
 
 .secret__panel {
