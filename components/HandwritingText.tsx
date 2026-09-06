@@ -1,0 +1,301 @@
+'use client';
+
+import { useMemo, useRef, useState } from 'react';
+import gsap from 'gsap';
+import { layoutText, naturalWidth, type LaidOutWord } from '@/lib/handwriting/layout';
+import { createRng, hashString, range } from '@/lib/rng';
+import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
+import { usePerformanceTier } from '@/lib/usePerformanceTier';
+
+export type LayoutInfo = {
+  words: LaidOutWord[];
+  /** Where a word sits in the viewport, once it has been laid out. */
+  pointOf: (word: LaidOutWord) => { x: number; y: number } | null;
+};
+
+export type WordEvent = {
+  word: LaidOutWord;
+  /** Centre of the word in viewport coordinates, for aiming atmosphere at it. */
+  point: { x: number; y: number } | null;
+};
+
+export type HandwritingTextProps = {
+  text: string;
+  /** Height of one em, in pixels. Treated as a maximum when `fit` is on. */
+  size?: number;
+  /**
+   * Shrink the hand until the longest written line fits the column, so the
+   * passage keeps its own line breaks rather than the browser's.
+   */
+  fit?: boolean;
+  /** The point below which shrinking stops and lines are allowed to wrap. */
+  minSize?: number;
+  align?: 'left' | 'center';
+  /** Design units of pen travel per second. Lower is more deliberate. */
+  speed?: number;
+  /** Seconds to wait after `start` before the nib touches down. */
+  delay?: number;
+  /** Extra seconds held after the last word of a given source line. */
+  pauseAfterLine?: Record<number, number>;
+  /** Source line indices written more slowly than the rest. */
+  emphasisLines?: number[];
+  lineHeight?: number;
+  letterSpacing?: number;
+  slant?: number;
+  jitter?: number;
+  strokeWidth?: number;
+  className?: string;
+  /** Nothing is written until this turns true. */
+  start?: boolean;
+  /** Render the passage already written, for ghosts and echoes. */
+  staticInk?: boolean;
+  glow?: boolean;
+  onWordStart?: (event: WordEvent) => void;
+  onWordEnd?: (event: WordEvent) => void;
+  onLineEnd?: (sourceLineIndex: number) => void;
+  onComplete?: () => void;
+  /** Fires once the passage has been measured, before a mark is made. */
+  onLayout?: (info: LayoutInfo) => void;
+  /** Fires as each stroke begins, with its duration. Drives the pen sound. */
+  onStrokeRef?: React.MutableRefObject<((duration: number) => void) | null>;
+};
+
+export default function HandwritingText({
+  text,
+  size = 30,
+  fit = true,
+  minSize = 17,
+  align = 'left',
+  speed = 640,
+  delay = 0,
+  pauseAfterLine,
+  emphasisLines,
+  lineHeight = 152,
+  letterSpacing = 5,
+  slant = 8,
+  jitter = 1,
+  strokeWidth = 4.9,
+  className,
+  start = false,
+  staticInk = false,
+  glow = true,
+  onWordStart,
+  onWordEnd,
+  onLineEnd,
+  onComplete,
+  onLayout,
+  onStrokeRef,
+}: HandwritingTextProps) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [width, setWidth] = useState(0);
+  const tier = usePerformanceTier();
+
+  // Latest callbacks, so the timeline never has to be rebuilt to pick them up.
+  const handlers = useRef({ onWordStart, onWordEnd, onLineEnd, onComplete, onLayout });
+  handlers.current = { onWordStart, onWordEnd, onLineEnd, onComplete, onLayout };
+
+  useIsomorphicLayoutEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const measure = () => setWidth(host.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(host);
+    return () => observer.disconnect();
+  }, []);
+
+  const layout = useMemo(() => {
+    if (width === 0) return null;
+
+    // A hand adjusts its size to the paper. On a phone `size` is the ceiling;
+    // on a wider column the writing is allowed to grow with it, up to a point,
+    // so the desktop reading does not become a postage stamp of type.
+    const ceiling = Math.max(size, Math.min(size * 1.6, width / 15));
+    const natural = naturalWidth(text, letterSpacing) * 1.03;
+    // Shrink until the longest line fits, and only once that would stop being
+    // legible, let it wrap.
+    const scale =
+      fit && natural > 0
+        ? Math.max(minSize, Math.min(ceiling, (width / natural) * 100))
+        : size;
+
+    return layoutText(text, {
+      // The column is measured in ems so the writing scales with the type.
+      maxWidth: (width / scale) * 100,
+      lineHeight,
+      letterSpacing,
+      slant,
+      jitter,
+      align,
+      seed: text,
+    });
+  }, [text, width, size, fit, minSize, lineHeight, letterSpacing, slant, jitter, align]);
+
+  const pointOf = useRef((word: LaidOutWord): { x: number; y: number } | null => null);
+  pointOf.current = (word: LaidOutWord) => {
+    const node = svgRef.current;
+    if (!node || !layout) return null;
+    const rect = node.getBoundingClientRect();
+    if (rect.width === 0) return null;
+    const [vx, vy, vw, vh] = layout.viewBox.split(' ').map(Number);
+    return {
+      x: rect.left + ((word.bounds.x + word.bounds.width / 2 - vx) / vw) * rect.width,
+      y: rect.top + ((word.bounds.y + word.bounds.height / 2 - vy) / vh) * rect.height,
+    };
+  };
+
+  useIsomorphicLayoutEffect(() => {
+    if (!layout) return;
+    handlers.current.onLayout?.({
+      words: layout.words,
+      pointOf: (word) => pointOf.current(word),
+    });
+  }, [layout]);
+
+  useIsomorphicLayoutEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || !layout) return;
+
+    if (staticInk) {
+      gsap.set(svg.querySelectorAll('path'), { strokeDashoffset: 0 });
+      gsap.set(svg.querySelectorAll('[data-word]'), { opacity: 0.95 });
+      return;
+    }
+
+    if (!start) return;
+
+    const groups = Array.from(svg.querySelectorAll<SVGGElement>('[data-word]'));
+    const reduced = tier.reducedMotion;
+
+    const pointFor = (word: LaidOutWord) => pointOf.current(word);
+
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        onComplete: () => handlers.current.onComplete?.(),
+      });
+
+      if (reduced) {
+        // No pen, no wobbleless compromise: the words simply arrive, in order.
+        groups.forEach((group, index) => {
+          const word = layout.words[index];
+          const at = delay + index * 0.09;
+          gsap.set(group.querySelectorAll('path'), { strokeDashoffset: 0 });
+          tl.fromTo(
+            group,
+            { opacity: 0 },
+            { opacity: 0.97, duration: 0.5, ease: 'power2.out' },
+            at,
+          );
+          tl.call(() => handlers.current.onWordStart?.({ word, point: pointFor(word) }), [], at);
+          tl.call(
+            () => {
+              handlers.current.onWordEnd?.({ word, point: pointFor(word) });
+              if (word.endsSourceLine) handlers.current.onLineEnd?.(word.sourceLineIndex);
+            },
+            [],
+            at + 0.5,
+          );
+        });
+        return;
+      }
+
+      const rng = createRng(hashString(`${text}::timing`));
+      let cursor = delay;
+
+      groups.forEach((group, index) => {
+        const word = layout.words[index];
+        const paths = Array.from(group.querySelectorAll<SVGPathElement>('path'));
+
+        // Short words come off the hand quickly; long ones take their time.
+        const emphasised = emphasisLines?.includes(word.sourceLineIndex) ?? false;
+        const wordSpeed = speed * range(rng, 0.86, 1.16) * (emphasised ? 0.82 : 1);
+        const wordStart = cursor;
+
+        tl.call(
+          () => handlers.current.onWordStart?.({ word, point: pointFor(word) }),
+          [],
+          wordStart,
+        );
+        tl.set(group, { opacity: 0.87 }, wordStart);
+
+        paths.forEach((path, strokeIndex) => {
+          const stroke = word.strokes[strokeIndex];
+          const duration = Math.max(0.045, stroke.length / wordSpeed);
+          const at = cursor;
+          tl.to(path, { strokeDashoffset: 0, duration, ease: 'none' }, at);
+          tl.call(() => onStrokeRef?.current?.(duration), [], at);
+          // The nib lifts between strokes of the same letter.
+          cursor = at + duration + range(rng, 0.012, 0.032);
+        });
+
+        const wordEnd = cursor;
+
+        // Ink pools where the pen rested, darkens, then settles as it dries.
+        tl.to(group, { opacity: 1, duration: 0.16, ease: 'power1.out' }, wordEnd);
+        tl.to(group, { opacity: 0.965, duration: 0.75, ease: 'power2.out' }, wordEnd + 0.16);
+
+        if (glow && tier.level !== 'low') {
+          tl.call(() => group.classList.add('hand__word--wet'), [], wordStart);
+          tl.fromTo(
+            group,
+            { '--wet-glow': 0.4, '--wet-blur': '7px' },
+            { '--wet-glow': 0, '--wet-blur': '2px', duration: 1.2, ease: 'power2.out' },
+            wordEnd,
+          );
+          tl.call(() => group.classList.remove('hand__word--wet'), [], wordEnd + 1.25);
+        }
+
+        tl.call(
+          () => {
+            handlers.current.onWordEnd?.({ word, point: pointFor(word) });
+            if (word.endsSourceLine) handlers.current.onLineEnd?.(word.sourceLineIndex);
+          },
+          [],
+          wordEnd,
+        );
+
+        cursor = wordEnd + range(rng, 0.07, 0.15);
+        if (word.endsSourceLine) {
+          cursor += 0.34 + (pauseAfterLine?.[word.sourceLineIndex] ?? 0);
+        }
+      });
+    }, svg);
+
+    return () => ctx.revert();
+    // The timeline is a one-shot performance; only `start` may re-trigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, start, staticInk, tier.reducedMotion, tier.level]);
+
+  return (
+    <div ref={hostRef} className={className}>
+      <span className="sr-only">{text}</span>
+      {layout ? (
+        <svg
+          ref={svgRef}
+          className="hand"
+          viewBox={layout.viewBox}
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+          focusable="false"
+        >
+          {layout.words.map((word) => (
+            <g key={word.index} data-word={word.index} style={{ opacity: 0 }}>
+              {word.strokes.map((stroke, strokeIndex) => (
+                <path
+                  key={strokeIndex}
+                  className="hand__stroke"
+                  d={stroke.d}
+                  pathLength={1}
+                  strokeWidth={strokeWidth * stroke.weight}
+                  strokeOpacity={stroke.opacity}
+                  style={{ strokeDasharray: 1, strokeDashoffset: 1 }}
+                />
+              ))}
+            </g>
+          ))}
+        </svg>
+      ) : null}
+    </div>
+  );
+}
