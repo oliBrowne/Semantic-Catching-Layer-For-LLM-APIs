@@ -6,5 +6,9 @@ next-env.d.ts
 .DS_Store
 .env*.local
 /scratch/
+# The music itself is yours, not the repository's.
 public/music/*.m4a
 public/music/*.mp3
+public/music/*.wav
+public/music/*.aac
+public/music/*.ogg

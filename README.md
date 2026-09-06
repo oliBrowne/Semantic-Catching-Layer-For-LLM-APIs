@@ -88,10 +88,18 @@ takes to dissolve, and how much dark there is before the next one starts.
 
 ### 3. The music
 
-Put two files in **`public/music/`**, named `01.m4a` and `02.m4a`. They are not
-in this repository and cannot be — they are commercial recordings — so use your
-own copies. `.m4a` and `.mp3` are the safe formats; `.ogg` will not play on iOS.
-Titles and filenames are in `content/music.ts`.
+Put two files in **`public/music/`**, named `01` and `02`:
+
+1. `01` — *Cry*, Cigarettes After Sex
+2. `02` — *Y somos novios*
+
+Any extension a browser plays works — `.m4a`, `.mp3`, `.wav`, `.aac` — and the
+player finds whichever is there. Avoid `.ogg`; iOS will not play it. They are
+not in this repository and cannot be, since they are commercial recordings, so
+use your own copies. Titles are in `content/music.ts`.
+
+They play in order and then start again, crossfading, for as long as the letter
+is open.
 
 With no files there, the piece falls back to a room tone it synthesises for
 itself: a low drone, a breath of air, a far-off bell. Nothing errors.

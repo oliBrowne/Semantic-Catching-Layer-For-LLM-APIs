@@ -7,19 +7,36 @@
  * and the piece falls back to the room tone it synthesises for itself, which
  * is quiet and works with no files at all.
  *
- * Any format a browser plays will do. m4a and mp3 are the safe ones; ogg is
- * not supported on iOS.
+ * Name them 01 and 02 and use any extension a browser plays — m4a, mp3, wav,
+ * aac — and the player finds them. Only ogg is a bad idea, because iOS will
+ * not play it.
  */
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
 
-export type Track = { src: string; title: string };
+export type Track = {
+  title: string;
+  /** Tried in order; the first one that exists is used. */
+  sources: string[];
+};
+
+/** Whatever you have. The first of these that is actually there gets played. */
+const formats = ['m4a', 'mp3', 'wav', 'aac', 'ogg'];
+
+const track = (name: string, title: string): Track => ({
+  title,
+  sources: formats.map((extension) => `${base}/music/${name}.${extension}`),
+});
 
 export const PLAYLIST: Track[] = [
-  { src: `${base}/music/01.m4a`, title: 'Cry — Cigarettes After Sex' },
-  // The second track from the Spotify link. Rename the file to 02.m4a.
-  { src: `${base}/music/02.m4a`, title: 'and then' },
+  track('01', 'Cry — Cigarettes After Sex'),
+  track('02', 'Y somos novios'),
 ];
+
+/**
+ * Order matters and repeats: when the last track ends it goes back to the
+ * first, so the letter is never in silence however long it is left open.
+ */
 
 /** Seconds of overlap between one track and the next. */
 export const CROSSFADE = 4;

@@ -41,19 +41,28 @@ export function createLetterAudio(): LetterAudio {
   let index = 0;
   let watcher: number | null = null;
   let musical = false;
+  let titles: string[] = [];
   let title: string | null = null;
 
-  async function canPlay(track: Track): Promise<boolean> {
-    try {
-      const response = await fetch(track.src, { method: 'HEAD' });
-      return response.ok;
-    } catch {
-      return false;
+  /** The first of a track's candidate files that actually exists, if any. */
+  async function locate(track: Track): Promise<string | null> {
+    for (const src of track.sources) {
+      try {
+        const head = await fetch(src, { method: 'HEAD' });
+        if (head.ok) return src;
+        // Not every static host answers HEAD. Ask for the first byte instead
+        // before concluding the file is not there.
+        const probe = await fetch(src, { headers: { Range: 'bytes=0-0' } });
+        if (probe.ok) return src;
+      } catch {
+        /* try the next extension */
+      }
     }
+    return null;
   }
 
-  function element(track: Track): HTMLAudioElement {
-    const audio = new Audio(track.src);
+  function element(src: string): HTMLAudioElement {
+    const audio = new Audio(src);
     audio.preload = 'auto';
     audio.volume = 0;
     audio.crossOrigin = 'anonymous';
@@ -69,8 +78,8 @@ export function createLetterAudio(): LetterAudio {
     if (players.length === 0) return;
     const current = players[next % players.length];
     index = next % players.length;
-    title = PLAYLIST[index]?.title ?? null;
 
+    title = titles[index] ?? null;
     current.currentTime = 0;
     current.volume = 0;
     void current.play().catch(() => {});
@@ -105,14 +114,16 @@ export function createLetterAudio(): LetterAudio {
     if (active) return;
     active = true;
 
-    const available: Track[] = [];
+    const found: { track: Track; src: string }[] = [];
     for (const track of PLAYLIST) {
-      if (await canPlay(track)) available.push(track);
+      const src = await locate(track);
+      if (src) found.push({ track, src });
     }
 
-    if (available.length > 0) {
+    if (found.length > 0) {
       musical = true;
-      players = available.map(element);
+      titles = found.map((entry) => entry.track.title);
+      players = found.map((entry) => element(entry.src));
       playFrom(0);
       return;
     }

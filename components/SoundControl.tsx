@@ -7,7 +7,7 @@ import { useSound } from '@/lib/audio/context';
  * makes a sound until it is touched.
  */
 export default function SoundControl() {
-  const { enabled, toggle } = useSound();
+  const { enabled, toggle, now } = useSound();
 
   return (
     <button
@@ -15,7 +15,11 @@ export default function SoundControl() {
       className={`sound${enabled ? ' sound--on' : ''}`}
       onClick={toggle}
       aria-pressed={enabled}
-      aria-label={enabled ? 'Stop the music' : 'Play a little music while you read'}
+      aria-label={
+        enabled
+          ? `Stop the music${now() ? ` — ${now()}` : ''}`
+          : 'Play a little music while you read'
+      }
     >
       <span className="sound__note" aria-hidden="true">
         ♫

@@ -3,7 +3,7 @@
 Two files, named exactly:
 
 - `01.m4a` — Cry, Cigarettes After Sex
-- `02.m4a` — the second track
+- `02.m4a` — Y somos novios
 
 They are not in this repository and cannot be: they are commercial recordings.
 Use your own copies.

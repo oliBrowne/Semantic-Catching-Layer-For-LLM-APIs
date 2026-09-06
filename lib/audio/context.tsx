@@ -16,6 +16,8 @@ import { createLetterAudio, type LetterAudio } from './engine';
 type SoundApi = {
   enabled: boolean;
   toggle: () => void;
+  /** What is sounding, for the control's label. Never shown on screen. */
+  now: () => string | null;
   /** Handed to HandwritingText so the nib can be heard while it writes. */
   strokeRef: MutableRefObject<((duration: number) => void) | null>;
 };
@@ -23,6 +25,7 @@ type SoundApi = {
 const SoundContext = createContext<SoundApi>({
   enabled: false,
   toggle: () => {},
+  now: () => null,
   strokeRef: { current: null },
 });
 
@@ -64,7 +67,10 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pointerdown', onFirstTouch);
   }, [enabled, toggle]);
 
-  const value = useMemo<SoundApi>(() => ({ enabled, toggle, strokeRef }), [enabled, toggle]);
+  const value = useMemo<SoundApi>(
+    () => ({ enabled, toggle, now: () => engine.current?.now() ?? null, strokeRef }),
+    [enabled, toggle],
+  );
 
   return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;
 }
