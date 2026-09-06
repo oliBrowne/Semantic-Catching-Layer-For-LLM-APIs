@@ -28,11 +28,11 @@ export type StanzaReaderProps = {
 };
 
 /** The beat every line is given after the pen leaves it. */
-const HOLD = 0.95;
+const HOLD = 0.5;
 /** How long a finished line takes to go. */
-const FADE = 0.95;
+const FADE = 0.6;
 /** And how long the dark lasts before the next one starts. */
-const GAP = 0.3;
+const GAP = 0.15;
 
 /**
  * A stanza read the way it would be spoken: one line at a time.

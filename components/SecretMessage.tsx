@@ -81,7 +81,7 @@ export default function SecretMessage({
           text={SECRET_LABEL}
           align="center"
           size={17}
-          speed={560}
+          speed={800}
           ready={ready}
           start={start}
           glow={false}
@@ -116,7 +116,7 @@ export default function SecretMessage({
                 text={SECRET_NOTE}
                 align="center"
                 size={19}
-                speed={820}
+                speed={1200}
                 ready={open}
                 start={open}
                 className="secret__note"

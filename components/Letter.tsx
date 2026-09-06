@@ -33,13 +33,13 @@ export default function Letter() {
   return (
     <>
       {/* ── the only ones ─────────────────────────────────────────────── */}
-      <Scene scroll={4.6} enterAt="top 68%">
+      <Scene scroll={3.5} enterAt="top 68%">
         {({ entered, near }) => (
           <StanzaReader
             text={EYES.text}
             size={24}
             minSize={19}
-            speed={880}
+            speed={1450}
             ready={near}
             start={entered}
             holds={EYES.holds}
@@ -65,13 +65,13 @@ export default function Letter() {
       <PromiseScene sectionRef={promiseRef} emberCount={tier.level === 'low' ? 20 : 34} />
 
       {/* ── here it is ────────────────────────────────────────────────── */}
-      <Scene scroll={5.2} wide enterAt="top 66%">
+      <Scene scroll={4.0} wide enterAt="top 66%">
         {({ entered, near }) => (
           <StanzaReader
             text={DECLARATION.text}
             size={24}
             minSize={19}
-            speed={840}
+            speed={1380}
             ready={near}
             start={entered}
             holds={DECLARATION.holds}
@@ -105,7 +105,7 @@ function SmileScene() {
   const atmosphere = useAtmosphere();
 
   return (
-    <Scene scroll={5.6} wide enterAt="top 66%">
+    <Scene scroll={4.2} wide enterAt="top 66%">
       {({ entered, near }) => (
         <div className="passage-group">
           <div className="halo" aria-hidden="true" />
@@ -113,7 +113,7 @@ function SmileScene() {
             text={SMILE.text}
             size={23}
             minSize={18}
-            speed={860}
+            speed={1420}
             ready={near}
             start={entered}
             holds={SMILE.holds}
@@ -181,7 +181,7 @@ function PromiseScene({
   };
 
   return (
-    <Scene scroll={6.4} wide enterAt="top 64%" sectionRef={sectionRef} id="promise">
+    <Scene scroll={5.4} wide enterAt="top 64%" sectionRef={sectionRef} id="promise">
       {({ entered, near }) => (
         <div ref={hostRef} className="passage-group passage-group--paper">
           <EmberGlow point={point} phase={phase} />
@@ -190,7 +190,7 @@ function PromiseScene({
             text={PROMISE.text}
             size={26}
             minSize={20}
-            speed={800}
+            speed={1250}
             ready={near}
             start={entered}
             holds={PROMISE.holds}

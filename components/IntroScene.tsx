@@ -80,7 +80,7 @@ export default function IntroScene() {
             text={OPENING.first}
             align="center"
             size={40}
-            speed={430}
+            speed={600}
             delay={beat}
             slant={7}
             start
@@ -90,7 +90,7 @@ export default function IntroScene() {
             text={OPENING.second}
             align="center"
             size={19}
-            speed={880}
+            speed={1350}
             delay={1.0}
             lineHeight={165}
             pauseAfterLine={{ 0: 0.5 }}

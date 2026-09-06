@@ -20,7 +20,7 @@ export const EYES = {
     'the only ones I ever wanted',
     'to be lost in.',
   ].join('\n'),
-  holds: { 1: 1.3, 3: 0.35 },
+  holds: { 1: 0.95, 3: 0.25 },
   /** The line the dust leans toward. */
   gatherLine: 4,
 };
@@ -34,7 +34,7 @@ export const SMILE = {
     'no other smile could move me',
     'like yours did.',
   ].join('\n'),
-  holds: { 1: 2.2, 2: 0.3, 4: 0.3 },
+  holds: { 1: 1.8, 2: 0.2, 4: 0.2 },
   /** Where the room stops moving altogether. */
   stillLine: 5,
   /** Left behind as an afterimage when the light goes. */
@@ -50,7 +50,7 @@ export const PROMISE = {
     'Even in the moments we do not understand each other,',
     'my heart will always know you.',
   ].join('\n'),
-  holds: { 1: 1.2, 3: 1.7, 4: 0.4 },
+  holds: { 1: 0.9, 3: 1.3, 4: 0.3 },
   /** The line the ember gathers behind. */
   emberLine: 5,
 };
@@ -63,7 +63,7 @@ export const DECLARATION = {
     'In this fleeting life and in every life to come,',
     'my choice will never change.',
   ].join('\n'),
-  holds: { 0: 0.3, 1: 1.3, 2: 1.3, 3: 0.35 },
+  holds: { 0: 0.2, 1: 1.0, 2: 1.0, 3: 0.25 },
 };
 
 export const FINAL_LINE = 'It will always be you. ♡';

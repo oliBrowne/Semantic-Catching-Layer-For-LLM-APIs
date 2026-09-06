@@ -156,7 +156,7 @@ export default function FinalPhotoReveal() {
               text={FINAL_LINE}
               align="center"
               size={27}
-              speed={560}
+              speed={800}
               ready={near}
               start={entered}
               slant={7}
@@ -169,7 +169,7 @@ export default function FinalPhotoReveal() {
               text={SIGNATURE.first}
               align="center"
               size={22}
-              speed={430}
+              speed={600}
               ready={near}
               start={signing}
               onComplete={() => window.setTimeout(() => setSigningName(true), 1400)}
@@ -178,7 +178,7 @@ export default function FinalPhotoReveal() {
               text={SIGNATURE.second}
               align="center"
               size={26}
-              speed={380}
+              speed={540}
               slant={11}
               ready={near}
               start={signingName}
