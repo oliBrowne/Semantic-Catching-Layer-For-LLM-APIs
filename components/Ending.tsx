@@ -9,6 +9,7 @@ import { HEART, SIGNATURE_MARK } from '@/lib/font/marks';
 import { useAtmosphere } from '@/lib/particles/context';
 import DrawnMark from './DrawnMark';
 import Passage from './Passage';
+import type { WordTiming } from '@/lib/voice';
 import photograph from '@/public/photo.jpg';
 
 /** Each beat of the ending, and how long the one before it is held. */
@@ -24,9 +25,12 @@ type Beat = 'line' | 'heart' | 'photo' | 'sign' | 'name' | 'done';
  */
 export default function Ending({
   active,
+  times,
   onFinished,
 }: {
   active: boolean;
+  /** The closing line's spans, when there is a reading to write it to. */
+  times?: WordTiming[];
   onFinished: () => void;
 }) {
   const lineRef = useRef<HTMLDivElement | null>(null);
@@ -109,6 +113,7 @@ export default function Ending({
           speed={950}
           ready={active}
           start={beat !== null}
+          times={times}
           onComplete={onLineWritten}
         />
       </div>

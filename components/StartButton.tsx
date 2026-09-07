@@ -7,6 +7,7 @@ import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
 import DrawnMark from './DrawnMark';
 import Passage from './Passage';
 import Vines from './Vines';
+import { primeReading } from '@/lib/audio/reading';
 
 /** How long the vines have the screen to themselves before the letter starts. */
 const GROWING = 2.6;
@@ -51,6 +52,11 @@ export default function StartButton({
     if (begun.current) return;
     begun.current = true;
     setPressed(true);
+
+    // The vines take a couple of seconds to grow before the letter starts, but
+    // this press is the only moment a browser will let a recording begin. So
+    // it is spent now, silently, and the reading is held until it is wanted.
+    primeReading();
 
     const host = hostRef.current;
     if (host) {

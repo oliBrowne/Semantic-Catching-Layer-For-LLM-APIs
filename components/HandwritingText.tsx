@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { layoutText, naturalWidth, type LaidOutWord } from '@/lib/handwriting/layout';
 import { createRng, hashString, range } from '@/lib/rng';
 import { useIsomorphicLayoutEffect } from '@/lib/useIsomorphicLayoutEffect';
+import type { WordTiming } from '@/lib/voice';
 import { usePerformanceTier } from '@/lib/usePerformanceTier';
 
 export type LayoutInfo = {
@@ -46,6 +47,13 @@ export type HandwritingTextProps = {
   pauseAfterLine?: Record<number, number>;
   /** Source line indices written more slowly than the rest. */
   emphasisLines?: number[];
+  /**
+   * When there is a reading to follow, one span per word, in seconds from the
+   * start of the passage. The pen stops keeping its own time and keeps the
+   * reader's instead: a word begins when it is spoken and is given exactly as
+   * long as it took to say.
+   */
+  times?: WordTiming[];
   lineHeight?: number;
   letterSpacing?: number;
   slant?: number;
@@ -89,6 +97,7 @@ export default function HandwritingText({
   delay = 0,
   pauseAfterLine,
   emphasisLines,
+  times,
   lineHeight = 152,
   letterSpacing = 5,
   slant = 8,
@@ -252,6 +261,20 @@ export default function HandwritingText({
         // Short words come off the hand quickly; long ones take their time.
         const emphasised = emphasisLines?.includes(word.sourceLineIndex) ?? false;
         const wordSpeed = speed * range(rng, 0.86, 1.16) * (emphasised ? 0.82 : 1);
+
+        // Every stroke of the word, and the moment the nib lifts between them.
+        const lifts = paths.map(() => range(rng, 0.012, 0.032));
+        const natural = paths.map((_, strokeIndex) =>
+          Math.max(0.045, (word.strokes[strokeIndex]?.length ?? 0) / wordSpeed),
+        );
+
+        // With a reading to follow, the word is moved to where it is spoken
+        // and its strokes are stretched or hurried to fill exactly that long,
+        // which is what puts the pen on the mouth rather than near it.
+        const spoken = times?.[index];
+        if (spoken) cursor = spoken.start;
+        const ink = natural.reduce((a, b) => a + b, 0) + lifts.reduce((a, b) => a + b, 0);
+        const pace = spoken ? Math.max(0.08, spoken.end - spoken.start) / Math.max(ink, 1e-4) : 1;
         const wordStart = cursor;
 
         tl.call(
@@ -262,13 +285,12 @@ export default function HandwritingText({
         tl.set(group, { opacity: 0.87 }, wordStart);
 
         paths.forEach((path, strokeIndex) => {
-          const stroke = word.strokes[strokeIndex];
-          const duration = Math.max(0.045, stroke.length / wordSpeed);
+          const duration = natural[strokeIndex] * pace;
           const at = cursor;
           tl.to(path, { strokeDashoffset: 0, duration, ease: 'none' }, at);
           tl.call(() => onStrokeRef?.current?.(duration), [], at);
           // The nib lifts between strokes of the same letter.
-          cursor = at + duration + range(rng, 0.012, 0.032);
+          cursor = at + duration + lifts[strokeIndex] * pace;
         });
 
         const wordEnd = cursor;
@@ -319,7 +341,7 @@ export default function HandwritingText({
     return () => ctx.revert();
     // The timeline is a one-shot performance; only `start` may re-trigger it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layout, start, scrub, staticInk, tier.reducedMotion, tier.level]);
+  }, [layout, start, scrub, staticInk, times, tier.reducedMotion, tier.level]);
 
   return (
     <div ref={hostRef} className={className}>

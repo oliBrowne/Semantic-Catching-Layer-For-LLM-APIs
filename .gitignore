@@ -12,3 +12,6 @@ public/music/*.mp3
 public/music/*.wav
 public/music/*.aac
 public/music/*.ogg
+
+# Working file from the voice aligner.
+tools/.aligned.wav

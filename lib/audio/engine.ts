@@ -14,6 +14,7 @@
  */
 
 import { CROSSFADE, PLAYLIST, SPOTIFY_TRACKS, VOLUME, type Track } from '@/content/music';
+import { READING } from '@/lib/voice';
 
 /** Where the sound ended up coming from. */
 export type SoundSource = 'none' | 'files' | 'spotify' | 'room';
@@ -27,7 +28,16 @@ export type LetterAudio = {
   playing: () => boolean;
   /** What is actually sounding: a track title, or the synthesised fallback. */
   now: () => string | null;
+  /**
+   * Set how loud the music is relative to normal, 0 to 1. Used to put it under
+   * a voice: a reading has to be the loudest thing in the room or there is no
+   * point having recorded it.
+   */
+  duck: (level: number) => void;
 };
+
+/** How loud the synthesised room sits when nothing is over it. */
+const ROOM_LEVEL = 0.55;
 
 const DRONE = [110, 164.81, 220];
 const BELLS = [440, 523.25, 587.33, 659.25, 783.99];
@@ -47,6 +57,10 @@ export function createLetterAudio(): LetterAudio {
   let musical = false;
   let titles: string[] = [];
   let title: string | null = null;
+  let ducked = 1;
+
+  /** How loud the music should be right now, given whatever is over it. */
+  const level = () => VOLUME * ducked;
 
   /** The first of a track's candidate files that actually exists, if any. */
   async function locate(track: Track): Promise<string | null> {
@@ -87,7 +101,7 @@ export function createLetterAudio(): LetterAudio {
     current.currentTime = 0;
     current.volume = 0;
     void current.play().catch(() => {});
-    fade(current, VOLUME, 2.5);
+    fade(current, level(), 2.5);
 
     if (watcher !== null) window.clearInterval(watcher);
     watcher = window.setInterval(() => {
@@ -133,8 +147,14 @@ export function createLetterAudio(): LetterAudio {
     }
 
     // No files, but there may be Spotify. That is a separate component with an
-    // iframe of its own, so nothing is played here — it is simply handed over.
-    if (SPOTIFY_TRACKS.some(Boolean)) {
+    // iframe of its own, so nothing is played here: it is simply handed over.
+    //
+    // Not, however, underneath a reading. Spotify's embed exposes no volume
+    // control at all, so a song played through it cannot be put under a voice,
+    // and a song and a voice at the same level are neither of them audible.
+    // Where there is a recording, the synthesised room tone below is used
+    // instead, because it can get out of the way.
+    if (SPOTIFY_TRACKS.some(Boolean) && READING === null) {
       musical = true;
       title = 'Spotify';
       return 'spotify';
@@ -153,13 +173,28 @@ export function createLetterAudio(): LetterAudio {
 
     master = ctx.createGain();
     master.gain.setValueAtTime(0.0001, ctx.currentTime);
-    master.gain.exponentialRampToValueAtTime(0.55, ctx.currentTime + 4);
+    master.gain.exponentialRampToValueAtTime(ROOM_LEVEL * ducked, ctx.currentTime + 4);
     master.connect(ctx.destination);
 
     buildDrone(ctx, master);
     buildRoomTone(ctx, master);
     scheduleBell();
     return 'room';
+  }
+
+  /** Take the music down under something, or bring it back up. */
+  function duck(next: number) {
+    ducked = Math.max(0, Math.min(1, next));
+    const player = players[index];
+    if (player) fade(player, level(), 1.6);
+    if (ctx && master) {
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(Math.max(0.0001, master.gain.value), ctx.currentTime);
+      master.gain.linearRampToValueAtTime(
+        Math.max(0.0001, ROOM_LEVEL * ducked),
+        ctx.currentTime + 1.6,
+      );
+    }
   }
 
   function buildDrone(context: AudioContext, out: GainNode) {
@@ -335,5 +370,5 @@ export function createLetterAudio(): LetterAudio {
     }, 1800);
   }
 
-  return { start, stop, pen, playing: () => active, now: () => title };
+  return { start, stop, pen, playing: () => active, now: () => title, duck };
 }

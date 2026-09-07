@@ -24,6 +24,8 @@ type SoundApi = {
   now: () => string | null;
   /** Handed to HandwritingText so the nib can be heard while it writes. */
   strokeRef: MutableRefObject<((duration: number) => void) | null>;
+  /** Put the music under something, or bring it back. 1 is normal. */
+  duck: (level: number) => void;
 };
 
 const SoundContext = createContext<SoundApi>({
@@ -32,6 +34,7 @@ const SoundContext = createContext<SoundApi>({
   source: 'none',
   now: () => null,
   strokeRef: { current: null },
+  duck: () => {},
 });
 
 export function SoundProvider({ children }: { children: ReactNode }) {
@@ -77,7 +80,14 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   }, [enabled, toggle]);
 
   const value = useMemo<SoundApi>(
-    () => ({ enabled, toggle, source, now: () => engine.current?.now() ?? null, strokeRef }),
+    () => ({
+      enabled,
+      toggle,
+      source,
+      now: () => engine.current?.now() ?? null,
+      strokeRef,
+      duck: (level: number) => engine.current?.duck(level),
+    }),
     [enabled, toggle, source],
   );
 

@@ -17,7 +17,7 @@ export default function SoundControl() {
       aria-pressed={enabled}
       aria-label={
         enabled
-          ? `Stop the music${now() ? ` — ${now()}` : ''}`
+          ? `Stop the music${now() ? `: ${now()}` : ''}`
           : 'Play a little music while you read'
       }
     >

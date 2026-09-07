@@ -58,7 +58,7 @@ const track = (name: string, title: string, url?: string): Track => ({
 });
 
 export const PLAYLIST: Track[] = [
-  track('01', 'Cry — Cigarettes After Sex'),
+  track('01', 'Cry, by Cigarettes After Sex'),
   track('02', 'Y somos novios'),
 ];
 

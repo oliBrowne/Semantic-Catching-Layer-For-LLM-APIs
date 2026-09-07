@@ -117,7 +117,7 @@ export const SECRET_LABEL = 'one more thing';
 
 /** Replace with whatever is actually behind it. */
 export const SECRET_NOTE = [
-  'this is where the last thing goes —',
+  'this is where the last thing goes,',
   'a voice note, or the sentence',
   'that was too quiet to write down.',
 ].join('\n');

@@ -14,10 +14,13 @@ import {
   type CardSpec,
 } from '@/content/letter';
 import { useAtmosphere } from '@/lib/particles/context';
+import { CARD_VOICE, CUES, FINAL_VOICE, type WordTiming } from '@/lib/voice';
+import { useReading } from '@/lib/audio/reading';
+import { useSound } from '@/lib/audio/context';
 import { usePerformanceTier } from '@/lib/usePerformanceTier';
 import type { LaidOutWord } from '@/lib/handwriting/layout';
 import type { LayoutInfo, WordEvent } from './HandwritingText';
-import Card from './Card';
+import Card, { FADE, GAP, HOLD } from './Card';
 import EmberGlow, { type EmberPhase } from './EmberGlow';
 import Ending from './Ending';
 import Ghost from './Ghost';
@@ -26,6 +29,28 @@ import PaperSurface from './PaperSurface';
 const PAPER_FROM_INDEX = CARDS.findIndex((card) => card.id === PAPER_FROM);
 const PAPER_TO_INDEX = CARDS.findIndex((card) => card.id === PAPER_TO);
 const GHOST_INDEX = CARDS.findIndex((card) => card.id === STILL_CARD);
+
+/** How far the music drops while the letter is being read aloud. */
+const UNDER_VOICE = 0.26;
+
+/**
+ * Where the letter has got to, read off the recording.
+ *
+ * A card is written from the moment its first word is spoken, and is sent away
+ * just late enough that it has cleared the frame by the time the next one is.
+ */
+function placeInReading(seconds: number) {
+  let writing = -1;
+  let leaving = -1;
+  for (let cue = 0; cue < CUES.length; cue += 1) {
+    if (seconds >= CUES[cue].voice.at) writing = cue;
+    const next = CUES[cue + 1];
+    const out = next ? next.voice.at - (FADE + GAP) : CUES[cue].voice.until + HOLD;
+    if (seconds >= out) leaving = cue;
+  }
+  const closing = FINAL_VOICE ? FINAL_VOICE.at : Infinity;
+  return { writing, leaving, ending: seconds >= closing - (FADE + GAP) };
+}
 
 /**
  * The letter, from the first card to the last thing on the page.
@@ -46,14 +71,36 @@ export default function Letter({
   const tier = usePerformanceTier();
   // -1 while the opening still has the screen.
   const [index, setIndex] = useState(-1);
+  const [gone, setGone] = useState(-1);
+  const [closing, setClosing] = useState(false);
   const gathered = useRef(false);
   const held = useRef(false);
 
   const advance = useCallback(() => setIndex((current) => current + 1), []);
 
+  // When there is a reading, the letter does not keep time at all: this runs
+  // every frame and simply reports where the voice has got to.
+  const follow = useCallback((seconds: number) => {
+    const place = placeInReading(seconds);
+    setIndex((current) => (current === place.writing ? current : place.writing));
+    setGone((current) => (current === place.leaving ? current : place.leaving));
+    setClosing((current) => (current === place.ending ? current : place.ending));
+  }, []);
+
+  const reading = useReading(begin, follow);
+  /** True when the letter is running on a clock of its own, as it always did. */
+  const timed = reading.silent;
+
+  // A voice has to be the loudest thing in the room, so the music goes under
+  // it for as long as it is speaking and comes back up when it stops.
+  const { duck } = useSound();
   useIsomorphicLayoutEffect(() => {
-    if (begin) setIndex((current) => (current < 0 ? 0 : current));
-  }, [begin]);
+    duck(reading.live ? UNDER_VOICE : 1);
+  }, [reading.live, duck]);
+
+  useIsomorphicLayoutEffect(() => {
+    if (begin && timed) setIndex((current) => (current < 0 ? 0 : current));
+  }, [begin, timed]);
 
   return (
     <>
@@ -64,9 +111,16 @@ export default function Letter({
       <Ghost text={GHOST} on={index === GHOST_INDEX + 1} />
 
       {CARDS.map((spec, position) => {
-        const active = index === position;
+        // On its own clock a card is written when the letter arrives at it. To
+        // a reading it is written from the moment its first word is spoken and
+        // stays written until the voice has moved on, so `active` only ever
+        // goes forward: turning it off again would take the ink with it.
+        const active = timed ? index === position : index >= position;
+        const live = index === position;
         // Typeset a card while the one before it is still being read.
         const ready = index >= position - 1;
+        const times = timed ? undefined : CARD_VOICE[spec.id]?.times;
+        const leaving = !timed && gone >= position;
 
         if (spec.id === EMBER_CARD) {
           return (
@@ -74,8 +128,11 @@ export default function Letter({
               key={spec.id}
               spec={spec}
               active={active}
+              live={live}
               ready={ready}
-              onDone={advance}
+              times={times}
+              leaving={leaving}
+              onDone={timed ? advance : undefined}
               emberCount={tier.level === 'low' ? 20 : 34}
             />
           );
@@ -86,8 +143,11 @@ export default function Letter({
             key={spec.id}
             spec={spec}
             active={active}
+            live={live}
             ready={ready}
-            onDone={advance}
+            times={times}
+            leaving={leaving}
+            onDone={timed ? advance : undefined}
             fitTo={ALL_LINES}
             paper={spec.id.startsWith('promise')}
             onWordStart={({ word, point }) => {
@@ -110,7 +170,11 @@ export default function Letter({
         );
       })}
 
-      <Ending active={index >= CARDS.length} onFinished={onFinished} />
+      <Ending
+        active={timed ? index >= CARDS.length : closing}
+        times={timed ? undefined : (FINAL_VOICE?.times ?? undefined)}
+        onFinished={onFinished}
+      />
     </>
   );
 }
@@ -119,14 +183,20 @@ export default function Letter({
 function PromiseCard({
   spec,
   active,
+  live,
   ready,
+  times,
+  leaving,
   onDone,
   emberCount,
 }: {
   spec: CardSpec;
   active: boolean;
+  live: boolean;
   ready: boolean;
-  onDone: () => void;
+  times?: WordTiming[];
+  leaving: boolean;
+  onDone?: () => void;
   emberCount: number;
 }) {
   const atmosphere = useAtmosphere();
@@ -169,7 +239,10 @@ function PromiseCard({
     <Card
       spec={spec}
       active={active}
+      live={live}
       ready={ready}
+      times={times}
+      leaving={leaving}
       onDone={onDone}
       fitTo={ALL_LINES}
       paper
