@@ -67,3 +67,44 @@ export const SIGNATURE_MARK: Mark = {
   ],
   weights: [1.15, 1.0, 0.85, 0.95],
 };
+
+/**
+ * A vine, growing.
+ *
+ * One tendril, drawn from the origin outward and curling back on itself at the
+ * tip, with three leaves and a short second branch. It is authored once and
+ * then rotated around a point, which is what makes a whole thicket of them out
+ * of a single set of strokes — and why the leaves all lean the same way
+ * relative to their stem, as real ones do.
+ */
+export const VINE: Mark = {
+  viewBox: '-8 -134 152 148',
+  strokes: [
+    // The stem, curling shut at the end.
+    '0,0 22,-2 46,-8 70,-18 90,-34 104,-55 110,-78 108,-100 98,-116 82,-122 69,-114 68,-100 78,-92',
+    // A leaf under the stem, near the base.
+    '46,-8 58,0 72,2 78,-6 70,-16 56,-16 46,-8',
+    // A short branch off the middle, with a leaf of its own.
+    '70,-18 78,-36 82,-56 78,-72',
+    '78,-72 88,-68 96,-73 94,-83 84,-82 78,-72',
+    // And two more on the outside of the curl.
+    '90,-34 104,-30 116,-35 118,-47 106,-50 94,-44 90,-34',
+    '108,-78 122,-78 132,-87 128,-99 116,-96 108,-88 108,-78',
+  ],
+  weights: [1, 0.72, 0.8, 0.66, 0.72, 0.66],
+};
+
+/**
+ * A ring, drawn round a word the way you would circle something in a letter.
+ *
+ * One pass, not quite closed, overshooting a little where the hand comes back
+ * to where it started — which is the only reason it reads as drawn rather than
+ * as a border.
+ */
+export const RING: Mark = {
+  viewBox: '-10 -10 236 100',
+  strokes: [
+    '150,7 100,3 56,10 24,26 8,45 16,63 44,75 90,81 140,79 184,69 210,51 212,32 194,16 160,7 137,6 128,9',
+  ],
+  weights: [1],
+};

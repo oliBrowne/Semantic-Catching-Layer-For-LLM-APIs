@@ -10,6 +10,9 @@ written again — one stroke at a time, by a hand you cannot see.
 
 ## What it does
 
+- **It waits to be started.** After the opening, one circled word. Pressing it
+  grows vines out across the screen, and is also the touch that lets the page
+  make a sound — no browser allows that without one.
 - **It plays itself, and the page cannot be scrolled while it does.** Not by
   cancelling touch events — while the letter is being written the document is
   exactly one screen tall, so there is nowhere for it to go. The frame is fixed
@@ -108,9 +111,9 @@ screen, but there, because Spotify's terms do not allow it to be hidden.
 
 With neither, it falls back to a room tone it synthesises for itself.
 
-**No browser will start audio without a gesture**, so the first tap anywhere
-starts it and the `♫` control at the top stops it again. Since the letter locks
-scrolling while it plays, a tap is the only thing that will do it.
+**No browser will start audio without a gesture.** Pressing *begin* is that
+gesture, which is part of why it is there; the `♫` control at the top stops it
+again.
 
 ### 4. The last thing
 
@@ -196,7 +199,11 @@ hands starting a third of a second apart, cascading down until the poem is
 standing there complete, which is the one thing the piece never shows until
 then.
 
-**`components/DrawnMark.tsx`** draws the two things that are not
+**`components/Vines.tsx`** is one tendril from `lib/font/marks.ts`, rotated
+around the point that was pressed and given a different size, lean and speed
+each time. Seven of them out of one set of strokes.
+
+**`components/DrawnMark.tsx`** draws the other things that are not
 letters — the heart and the signature — both in `lib/font/marks.ts`.
 
 The signature is worth a note if you ever want to change it. Cursive lives in

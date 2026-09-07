@@ -68,8 +68,10 @@ export const PLAYLIST: Track[] = [
  * at all.
  */
 export const SPOTIFY_TRACKS: string[] = [
-  // Cry — Cigarettes After Sex. Paste the ID from its Spotify link.
-  '',
+  // Cry — Cigarettes After Sex. Found by search rather than checked, because
+  // Spotify is unreachable from the machine this was built on. If it turns out
+  // to be the wrong recording, 0Qr61NXlyAeQaADO5xn3rI was the other candidate.
+  '3p4hRhMcb6ch8OLtATMaLw',
   // Y somos novios, from the link you sent.
   '1DG4eM5tQvuaBSEEO2NSlk',
 ];

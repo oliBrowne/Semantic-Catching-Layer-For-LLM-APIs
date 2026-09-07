@@ -512,6 +512,82 @@ body {
 
 /* ── The photograph ─────────────────────────────────────────────────────── */
 
+/* ── The way in ────────────────────────────────────────────────────────── */
+
+.start {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  z-index: 8;
+}
+
+.start__button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 9.5rem;
+  height: 4.4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.start__button:disabled {
+  cursor: default;
+}
+
+.start__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.start__ring .mark__stroke {
+  stroke: var(--ink-quiet);
+  stroke-opacity: 0.5;
+}
+
+.start__word {
+  width: 3.6rem;
+}
+
+.start__word .hand__stroke {
+  stroke: var(--ink);
+}
+
+/* ── Vines ─────────────────────────────────────────────────────────────── */
+
+/*
+  Wider than the screen on purpose, so the vines run off the edges rather than
+  stopping politely inside them — and centred with margins rather than by the
+  grid, because a grid item larger than its container gets clamped to the start
+  corner instead of centring.
+*/
+.vines {
+  --spread: min(155vw, 46rem);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 7;
+  width: var(--spread);
+  height: var(--spread);
+  margin-left: calc(var(--spread) * -0.5);
+  margin-top: calc(var(--spread) * -0.5);
+  pointer-events: none;
+  overflow: visible;
+}
+
+.vines__stroke {
+  fill: none;
+  stroke: var(--ink);
+  stroke-opacity: 0.46;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* ── The ending ────────────────────────────────────────────────────────── */
 
 /*

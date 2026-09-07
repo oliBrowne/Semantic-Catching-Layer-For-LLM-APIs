@@ -7,6 +7,7 @@ import Finale from './Finale';
 import IntroScene from './IntroScene';
 import SecretMessage from './SecretMessage';
 import SpotifyPlayer from './SpotifyPlayer';
+import StartButton from './StartButton';
 
 /*
   Everything below the opening is loaded separately. Nothing in the letter is
@@ -32,6 +33,7 @@ const AFTER = 2.4;
  */
 export default function Experience() {
   const atmosphere = useAtmosphere();
+  const [invited, setInvited] = useState(false);
   const [begun, setBegun] = useState(false);
   const [released, setReleased] = useState(false);
   const [atBottom, setAtBottom] = useState(false);
@@ -63,7 +65,8 @@ export default function Experience() {
 
       <main className={`frame${atBottom ? ' frame--finale' : ''}`}>
         <ParticleField />
-        <IntroScene onFinished={() => setBegun(true)} />
+        <IntroScene onFinished={() => setInvited(true)} />
+        <StartButton show={invited && !begun} onStart={() => setBegun(true)} />
         <Letter begin={begun} onFinished={() => setReleased(true)} />
         <Finale on={atBottom} />
         <SpotifyPlayer />
