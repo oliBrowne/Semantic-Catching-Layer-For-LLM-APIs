@@ -28,11 +28,13 @@
  *    Spotify's own embedded player, which is the licensed way to put a
  *    specific track on a page. Paste the track IDs below.
  *
- *    Know what it does before you rely on it: a listener signed in to Spotify
- *    in that browser hears the whole song. Everyone else hears about thirty
- *    seconds. The player is also a visible Spotify widget — small and dimmed
- *    at the bottom of the screen, but there, because Spotify's terms do not
- *    allow it to be hidden.
+ *    Know what it does before you rely on it. A listener signed in to Spotify
+ *    in that browser hears the whole song; everyone else hears about thirty
+ *    seconds and then it moves on to the next one. That is a licensing limit
+ *    rather than a setting — Spotify's servers decide it from who is asking,
+ *    and no parameter here changes it. The player is also a visible Spotify
+ *    widget, small and dimmed at the foot of the screen but there, because
+ *    their terms do not allow it to be hidden.
  *
  *
  * With neither, the piece falls back to a room tone it synthesises for itself.

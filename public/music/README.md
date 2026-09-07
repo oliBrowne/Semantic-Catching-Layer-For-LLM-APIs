@@ -8,31 +8,39 @@ Two files, named `01` and `02`:
 Any extension a browser plays works — `.m4a`, `.mp3`, `.wav`, `.aac` — and the
 player finds whichever is there. Avoid `.ogg`; iOS will not play it.
 
-## Where a file actually comes from
+## Why bother, when Spotify is already wired up
 
-You need a real audio file, which means somewhere that sells you one:
+Because of who is listening. Spotify's embedded player gives the whole song to
+someone signed in to Spotify in that browser, and about thirty seconds to
+everyone else. That is a licensing limit, not a setting — Spotify's servers
+decide it based on who is asking, and there is no parameter that changes it.
 
-- **iTunes Store**, **Amazon Music** (buy, not stream), **Bandcamp**, **Qobuz**
-- a CD you own
-- anywhere else you have already bought it
+Files have none of that. Full songs, full quality, no account, no widget on the
+screen, no ads, the same for every person who opens the letter.
 
-A Spotify or Apple Music subscription does **not** give you one. Those downloads
-are encrypted and stay inside their apps, and stream-ripping tools break both
-those services' terms and copyright.
+## Getting the files
 
-If you would rather not commit a few megabytes of audio, host the files
-somewhere and put the full https URL in `content/music.ts` instead.
+It is two songs and about $2.60. You need somewhere that sells you a file
+rather than streaming access:
 
-## If you have no files
+**iTunes Store** — on a Mac, open the Music app, and if there is no "iTunes
+Store" in the sidebar turn it on in Settings → General. Search the song, buy
+it, and once it downloads right-click the track → Show in Finder. That file is
+what you want.
 
-`content/music.ts` also takes Spotify track IDs, and the piece falls back to
-Spotify's own embedded player — the licensed way to put a particular recording
-on a page. Two things to know before relying on it: someone signed in to
-Spotify in that browser hears the whole song and everyone else hears about
-thirty seconds, and the player is a visible Spotify widget, because their terms
-do not allow it to be hidden.
+**Amazon Music** — buy the MP3 (not a stream), then Your Digital Orders →
+download.
 
-## If you have neither
+**Bandcamp or Qobuz** — if the record is there, both hand you a plain file in
+whatever format you pick.
+
+Then drop both files in this folder and rename them `01` and `02`.
+
+A Spotify or Apple Music **subscription** will not do it. Those downloads are
+encrypted and only play inside their own apps, which is the whole reason
+"export it from Spotify" is not a thing.
+
+## If you have neither files nor Spotify IDs
 
 It falls back to a room tone it synthesises for itself. Quiet, wordless, needs
 nothing from anyone, and nothing errors.
@@ -40,4 +48,6 @@ nothing from anyone, and nothing errors.
 ## Size
 
 These files ship with the site. A five-minute track at 128kbps is about 5 MB,
-which someone opening this on mobile data has to download before it plays.
+which someone opening this on mobile data has to download before it plays. If
+that bothers you, host them somewhere and put the full https URL in
+`content/music.ts` instead.
