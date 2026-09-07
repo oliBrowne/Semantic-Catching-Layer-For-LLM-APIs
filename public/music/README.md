@@ -1,20 +1,43 @@
 # Put the music here
 
-Two files, named exactly:
+Two files, named `01` and `02`:
 
-- `01.m4a` — Cry, Cigarettes After Sex
-- `02.m4a` — Y somos novios
+1. `01` — Cry, Cigarettes After Sex
+2. `02` — Y somos novios
 
-They are not in this repository and cannot be: they are commercial recordings.
-Use your own copies.
+Any extension a browser plays works — `.m4a`, `.mp3`, `.wav`, `.aac` — and the
+player finds whichever is there. Avoid `.ogg`; iOS will not play it.
 
-Any format browsers play works — `.m4a` and `.mp3` are the safe choices, `.ogg`
-will not play on iOS. If you use a different extension, change the filenames in
-`content/music.ts` to match.
+## Where a file actually comes from
 
-With no files here the piece still works: it falls back to the room tone it
-synthesises for itself, and nothing errors.
+You need a real audio file, which means somewhere that sells you one:
 
-Note that these files ship with the site, so keep an eye on their size — a
-five-minute track at 128kbps is about 5 MB, which someone opening this on
-mobile data has to download.
+- **iTunes Store**, **Amazon Music** (buy, not stream), **Bandcamp**, **Qobuz**
+- a CD you own
+- anywhere else you have already bought it
+
+A Spotify or Apple Music subscription does **not** give you one. Those downloads
+are encrypted and stay inside their apps, and stream-ripping tools break both
+those services' terms and copyright.
+
+If you would rather not commit a few megabytes of audio, host the files
+somewhere and put the full https URL in `content/music.ts` instead.
+
+## If you have no files
+
+`content/music.ts` also takes Spotify track IDs, and the piece falls back to
+Spotify's own embedded player — the licensed way to put a particular recording
+on a page. Two things to know before relying on it: someone signed in to
+Spotify in that browser hears the whole song and everyone else hears about
+thirty seconds, and the player is a visible Spotify widget, because their terms
+do not allow it to be hidden.
+
+## If you have neither
+
+It falls back to a room tone it synthesises for itself. Quiet, wordless, needs
+nothing from anyone, and nothing errors.
+
+## Size
+
+These files ship with the site. A five-minute track at 128kbps is about 5 MB,
+which someone opening this on mobile data has to download before it plays.

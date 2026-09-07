@@ -336,6 +336,27 @@ body {
   }
 }
 
+/*
+  Spotify's player, when there are no audio files to play instead. It has to be
+  visible — their terms do not allow it to be hidden — so it sits as low and as
+  quietly as it can, and only appears once someone has asked for sound.
+*/
+.spotify {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9;
+  width: min(92vw, 26rem);
+  opacity: 0.34;
+  transition: opacity 0.6s var(--ease-soft);
+}
+
+.spotify:hover,
+.spotify:focus-within {
+  opacity: 0.85;
+}
+
 /* ── Sound ──────────────────────────────────────────────────────────────── */
 
 .sound {

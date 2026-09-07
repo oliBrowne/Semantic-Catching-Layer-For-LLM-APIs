@@ -6,6 +6,7 @@ import { useAtmosphere } from '@/lib/particles/context';
 import Finale from './Finale';
 import IntroScene from './IntroScene';
 import SecretMessage from './SecretMessage';
+import SpotifyPlayer from './SpotifyPlayer';
 
 /*
   Everything below the opening is loaded separately. Nothing in the letter is
@@ -65,6 +66,7 @@ export default function Experience() {
         <IntroScene onFinished={() => setBegun(true)} />
         <Letter begin={begun} onFinished={() => setReleased(true)} />
         <Finale on={atBottom} />
+        <SpotifyPlayer />
         {released ? (
           <div className={`ending__secret${atBottom ? ' ending__secret--out' : ''}`}>
             <SecretMessage />

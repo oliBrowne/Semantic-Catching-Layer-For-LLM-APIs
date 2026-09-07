@@ -13,9 +13,13 @@ import {
 } from 'react';
 import { createLetterAudio, type LetterAudio } from './engine';
 
+/** Where the sound is coming from, once there is any. */
+export type SoundSource = 'none' | 'files' | 'spotify' | 'room';
+
 type SoundApi = {
   enabled: boolean;
   toggle: () => void;
+  source: SoundSource;
   /** What is sounding, for the control's label. Never shown on screen. */
   now: () => string | null;
   /** Handed to HandwritingText so the nib can be heard while it writes. */
@@ -25,6 +29,7 @@ type SoundApi = {
 const SoundContext = createContext<SoundApi>({
   enabled: false,
   toggle: () => {},
+  source: 'none',
   now: () => null,
   strokeRef: { current: null },
 });
@@ -34,6 +39,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const strokeRef = useRef<((duration: number) => void) | null>(null);
   const touched = useRef(false);
   const [enabled, setEnabled] = useState(false);
+  const [source, setSource] = useState<SoundSource>('none');
 
   const toggle = useCallback(() => {
     touched.current = true;
@@ -45,9 +51,12 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       if (wasEnabled) {
         audio.stop();
         strokeRef.current = null;
+        setSource('none');
         return false;
       }
-      void audio.start();
+      // The engine looks for audio files first and reports what it settled on.
+      // Spotify is its own component, so it is handed off rather than played.
+      void audio.start().then((chosen) => setSource(chosen));
       strokeRef.current = (duration) => audio.pen(duration);
       return true;
     });
@@ -68,8 +77,8 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   }, [enabled, toggle]);
 
   const value = useMemo<SoundApi>(
-    () => ({ enabled, toggle, now: () => engine.current?.now() ?? null, strokeRef }),
-    [enabled, toggle],
+    () => ({ enabled, toggle, source, now: () => engine.current?.now() ?? null, strokeRef }),
+    [enabled, toggle, source],
   );
 
   return <SoundContext.Provider value={value}>{children}</SoundContext.Provider>;

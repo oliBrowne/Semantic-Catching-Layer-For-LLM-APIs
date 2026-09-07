@@ -13,10 +13,14 @@
  * Nothing starts without a deliberate tap, because no browser will allow it to.
  */
 
-import { CROSSFADE, PLAYLIST, VOLUME, type Track } from '@/content/music';
+import { CROSSFADE, PLAYLIST, SPOTIFY_TRACKS, VOLUME, type Track } from '@/content/music';
+
+/** Where the sound ended up coming from. */
+export type SoundSource = 'none' | 'files' | 'spotify' | 'room';
 
 export type LetterAudio = {
-  start: () => Promise<void>;
+  /** Resolves with whatever it managed to find to play. */
+  start: () => Promise<SoundSource>;
   stop: () => void;
   /** Called as each pen stroke begins. Ignored while music is playing. */
   pen: (durationSeconds: number) => void;
@@ -110,8 +114,8 @@ export function createLetterAudio(): LetterAudio {
     step();
   }
 
-  async function start() {
-    if (active) return;
+  async function start(): Promise<SoundSource> {
+    if (active) return musical ? 'files' : 'room';
     active = true;
 
     const found: { track: Track; src: string }[] = [];
@@ -125,7 +129,15 @@ export function createLetterAudio(): LetterAudio {
       titles = found.map((entry) => entry.track.title);
       players = found.map((entry) => element(entry.src));
       playFrom(0);
-      return;
+      return 'files';
+    }
+
+    // No files, but there may be Spotify. That is a separate component with an
+    // iframe of its own, so nothing is played here — it is simply handed over.
+    if (SPOTIFY_TRACKS.some(Boolean)) {
+      musical = true;
+      title = 'Spotify';
+      return 'spotify';
     }
 
     // No music to play, so make some.
@@ -134,8 +146,8 @@ export function createLetterAudio(): LetterAudio {
     const Ctor =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!Ctor) return;
 
+    if (!Ctor) return 'none';
     ctx = ctx ?? new Ctor();
     if (ctx.state === 'suspended') await ctx.resume();
 
@@ -147,6 +159,7 @@ export function createLetterAudio(): LetterAudio {
     buildDrone(ctx, master);
     buildRoomTone(ctx, master);
     scheduleBell();
+    return 'room';
   }
 
   function buildDrone(context: AudioContext, out: GainNode) {

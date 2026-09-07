@@ -87,28 +87,30 @@ takes to dissolve, and how much dark there is before the next one starts.
 
 ### 3. The music
 
-Put two files in **`public/music/`**, named `01` and `02`:
+Nothing in this repository can fetch a commercial recording, so this needs
+something from you. There are two ways, tried in this order.
 
-1. `01` — *Cry*, Cigarettes After Sex
-2. `02` — *Y somos novios*
+**Audio files** — the good one. Full songs, in order, looping, for everyone who
+opens the letter. Put them in `public/music/` as `01` and `02` with any
+extension a browser plays. You need a real file, which means a purchase that
+gives you one: iTunes Store, Amazon Music, Bandcamp, Qobuz, a CD. A Spotify or
+Apple Music subscription does not — those downloads are encrypted and stay
+inside their apps. Files can also live elsewhere: put a full https URL in
+`content/music.ts` and they are played from there.
 
-Any extension a browser plays works — `.m4a`, `.mp3`, `.wav`, `.aac` — and the
-player finds whichever is there. Avoid `.ogg`; iOS will not play it. They are
-not in this repository and cannot be, since they are commercial recordings, so
-use your own copies. Titles are in `content/music.ts`.
+**Spotify** — the one that needs no files. Paste track IDs into
+`SPOTIFY_TRACKS` in `content/music.ts` and the piece uses Spotify's own
+embedded player, which is the licensed way to put a particular recording on a
+page. Two things to know first: someone signed in to Spotify in that browser
+hears the whole song and everyone else hears about thirty seconds, and the
+player is a visible Spotify widget — small and dimmed at the foot of the
+screen, but there, because Spotify's terms do not allow it to be hidden.
 
-They play in order and then start again, crossfading, for as long as the letter
-is open.
-
-With no files there, the piece falls back to a room tone it synthesises for
-itself: a low drone, a breath of air, a far-off bell. Nothing errors.
+With neither, it falls back to a room tone it synthesises for itself.
 
 **No browser will start audio without a gesture**, so the first tap anywhere
-starts it and the `♫` control at the top stops it again. On iOS a scroll is not
-a gesture for this purpose — it genuinely has to be a tap.
-
-Keep an eye on file size: these ship with the site, and a five-minute track at
-128kbps is about 5 MB for someone opening this on mobile data.
+starts it and the `♫` control at the top stops it again. Since the letter locks
+scrolling while it plays, a tap is the only thing that will do it.
 
 ### 4. The last thing
 
