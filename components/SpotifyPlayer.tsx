@@ -39,7 +39,7 @@ const SCRIPT = 'https://open.spotify.com/embed/iframe-api/v1';
  * This is the licensed way to put a particular recording on a page, and it is
  * the only way to play these two songs without holding copies of them. What it
  * costs: a listener signed in to Spotify hears the whole song and everyone else
- * hears about thirty seconds, and the widget has to be visible — Spotify's
+ * hears about thirty seconds, and the widget has to be visible: Spotify's
  * terms do not allow it to be hidden, so it sits small and dimmed at the foot
  * of the screen rather than being tucked out of sight.
  *
@@ -47,7 +47,7 @@ const SCRIPT = 'https://open.spotify.com/embed/iframe-api/v1';
  * it.
  */
 export default function SpotifyPlayer() {
-  const { source } = useSound();
+  const { source, confirm } = useSound();
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const controllerRef = useRef<Controller | null>(null);
@@ -67,6 +67,11 @@ export default function SpotifyPlayer() {
           controllerRef.current = controller;
 
           controller.addListener('playback_update', ({ data }) => {
+            // Proof that this is actually making a noise, rather than sitting
+            // there loaded and paused because the browser would not autoplay
+            // it. Without this the sound quietly falls back to something else.
+            if (!data.isPaused && data.position > 0) confirm();
+
             // The embed reports position in milliseconds, and reaching the end
             // is the only signal that a track is over.
             if (!data.duration || handingOver.current) return;
@@ -110,6 +115,8 @@ export default function SpotifyPlayer() {
       controllerRef.current?.destroy();
       controllerRef.current = null;
     };
+    // `confirm` is stable for the life of the provider.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source]);
 
   useEffect(() => {

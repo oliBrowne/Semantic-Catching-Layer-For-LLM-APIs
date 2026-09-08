@@ -26,6 +26,12 @@ type SoundApi = {
   strokeRef: MutableRefObject<((duration: number) => void) | null>;
   /** Put the music under something, or bring it back. 1 is normal. */
   duck: (level: number) => void;
+  /**
+   * Called by a handed-over player once it is genuinely making a sound. If
+   * nothing calls this, the handover is treated as having failed and something
+   * that does work is played instead.
+   */
+  confirm: () => void;
 };
 
 const SoundContext = createContext<SoundApi>({
@@ -35,12 +41,17 @@ const SoundContext = createContext<SoundApi>({
   now: () => null,
   strokeRef: { current: null },
   duck: () => {},
+  confirm: () => {},
 });
+
+/** How long a handed-over player has to prove it is audible. */
+const PROVE_IT = 6000;
 
 export function SoundProvider({ children }: { children: ReactNode }) {
   const engine = useRef<LetterAudio | null>(null);
   const strokeRef = useRef<((duration: number) => void) | null>(null);
   const touched = useRef(false);
+  const confirmed = useRef(false);
   const [enabled, setEnabled] = useState(false);
   const [source, setSource] = useState<SoundSource>('none');
 
@@ -66,7 +77,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // No browser will start sound without a gesture, so the first touch is taken
-  // as one — the control is right there at the top of the screen to stop it
+  // as one: the control is right there at the top of the screen to stop it
   // again, and it shows what is playing.
   useEffect(() => {
     if (enabled || touched.current) return;
@@ -79,6 +90,20 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('pointerdown', onFirstTouch);
   }, [enabled, toggle]);
 
+  // A source that was handed control has a few seconds to prove it is audible.
+  // Spotify's embed very often is not: a phone will not autoplay a cross-origin
+  // iframe, and the failure is silent, which would leave the page claiming to
+  // play music while playing none. Rather than trust it, wait for it to say so.
+  useEffect(() => {
+    if (source !== 'spotify') return;
+    confirmed.current = false;
+    const timer = window.setTimeout(() => {
+      if (confirmed.current) return;
+      void engine.current?.giveUp().then((instead) => setSource(instead));
+    }, PROVE_IT);
+    return () => window.clearTimeout(timer);
+  }, [source]);
+
   const value = useMemo<SoundApi>(
     () => ({
       enabled,
@@ -87,6 +112,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       now: () => engine.current?.now() ?? null,
       strokeRef,
       duck: (level: number) => engine.current?.duck(level),
+      confirm: () => {
+        confirmed.current = true;
+      },
     }),
     [enabled, toggle, source],
   );

@@ -25,7 +25,7 @@ const AFTER = 2.4;
  *
  * The frame is fixed to the window and never moves. While the letter is being
  * written there is nothing below it at all, so the page simply cannot be
- * scrolled — no listeners to fight, no touch handlers to cancel: a document
+ * scrolled: no listeners to fight, no touch handlers to cancel: a document
  * exactly one screen tall has nowhere to go.
  *
  * When the letter has finished saying itself, the page grows underneath it and

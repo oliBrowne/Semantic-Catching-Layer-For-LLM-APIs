@@ -5,8 +5,8 @@
  *
  * - If there is music in public/music/, it plays that, in order, looping the
  *   whole playlist, crossfading between tracks.
- * - If there is not — and there is not, in the repository, because those are
- *   commercial recordings — it synthesises a room instead: a low warm drone, a
+ * - If there is not: and there is not, in the repository, because those are
+ *   commercial recordings: it synthesises a room instead: a low warm drone, a
  *   breath of room tone, an occasional far-off bell, and the faintest scratch
  *   of a nib timed to the strokes on screen.
  *
@@ -34,18 +34,40 @@ export type LetterAudio = {
    * point having recorded it.
    */
   duck: (level: number) => void;
+  /**
+   * Called when a source that was handed control turned out to be silent.
+   * Resolves with whatever is actually playing now.
+   */
+  giveUp: () => Promise<SoundSource>;
 };
 
 /** How loud the synthesised room sits when nothing is over it. */
 const ROOM_LEVEL = 0.55;
 
-const DRONE = [110, 164.81, 220];
-const BELLS = [440, 523.25, 587.33, 659.25, 783.99];
+/**
+ * Four slow major-seventh chords that hand over to each other, which is the
+ * whole piece of music. Voiced low and close so they wash together rather than
+ * sounding like four separate events: Fmaj7, Cmaj7, Dm7, B flat maj7.
+ */
+const PROGRESSION = [
+  [87.31, 220.0, 261.63, 329.63],
+  [130.81, 164.81, 196.0, 246.94],
+  [146.83, 174.61, 220.0, 261.63],
+  [116.54, 146.83, 174.61, 220.0],
+];
+
+/** How long each chord is held before the next one starts underneath it. */
+const CHORD = 13;
+/** Overlap, so a chord is always arriving while the one before it leaves. */
+const BLOOM = 4.5;
+
+const BELLS = [523.25, 587.33, 659.25, 783.99, 880];
 
 export function createLetterAudio(): LetterAudio {
   let ctx: AudioContext | null = null;
   let master: GainNode | null = null;
   let bellTimer: number | null = null;
+  let chordTimer: number | null = null;
   let voices: AudioScheduledSourceNode[] = [];
   let active = false;
   let lastPen = 0;
@@ -147,20 +169,35 @@ export function createLetterAudio(): LetterAudio {
     }
 
     // No files, but there may be Spotify. That is a separate component with an
-    // iframe of its own, so nothing is played here: it is simply handed over.
+    // iframe of its own, so nothing is played here: it is handed over.
     //
-    // Not, however, underneath a reading. Spotify's embed exposes no volume
-    // control at all, so a song played through it cannot be put under a voice,
-    // and a song and a voice at the same level are neither of them audible.
-    // Where there is a recording, the synthesised room tone below is used
-    // instead, because it can get out of the way.
+    // Handed over on trial, though. A page that says it is playing music and
+    // then plays none is worse than one that admits it has none, and there are
+    // several ordinary reasons the embed makes no sound: a browser that will
+    // not autoplay a cross-origin iframe, which is most of them on a phone; a
+    // blocked script; a track that will not load. So the handover is given a
+    // few seconds to prove itself, and `giveUp` below is what happens if it
+    // does not.
+    //
+    // Never underneath a reading, either: the embed exposes no volume control
+    // at all, so a song played through it cannot be put under a voice, and the
+    // two at the same level are neither of them audible.
     if (SPOTIFY_TRACKS.some(Boolean) && READING === null) {
       musical = true;
       title = 'Spotify';
       return 'spotify';
     }
 
-    // No music to play, so make some.
+    return room();
+  }
+
+  /**
+   * The music this makes for itself: four slow chords, some air, and the
+   * occasional bell. It needs nothing from anyone and it always works, which
+   * is why everything else falls back to it.
+   */
+  async function room(): Promise<SoundSource> {
+    if (ctx && master) return 'room';
     musical = false;
     title = 'room tone';
     const Ctor =
@@ -176,10 +213,16 @@ export function createLetterAudio(): LetterAudio {
     master.gain.exponentialRampToValueAtTime(ROOM_LEVEL * ducked, ctx.currentTime + 4);
     master.connect(ctx.destination);
 
-    buildDrone(ctx, master);
     buildRoomTone(ctx, master);
+    startProgression();
     scheduleBell();
     return 'room';
+  }
+
+  /** Spotify never made a sound. Play something that will. */
+  async function giveUp(): Promise<SoundSource> {
+    if (!active) return 'none';
+    return room();
   }
 
   /** Take the music down under something, or bring it back up. */
@@ -197,41 +240,74 @@ export function createLetterAudio(): LetterAudio {
     }
   }
 
-  function buildDrone(context: AudioContext, out: GainNode) {
+  /**
+   * One chord, swelling in and falling away again.
+   *
+   * Every note is its own oscillator with its own slow drift, so the chord
+   * never sits perfectly still and never lands exactly in tune with itself,
+   * which is the difference between a chord and a hum.
+   */
+  function playChord(context: AudioContext, out: GainNode, chord: number[], when: number) {
     const shelf = context.createBiquadFilter();
     shelf.type = 'lowpass';
-    shelf.frequency.value = 620;
-    shelf.Q.value = 0.4;
+    shelf.frequency.value = 900;
+    shelf.Q.value = 0.5;
     shelf.connect(out);
 
-    DRONE.forEach((frequency, position) => {
+    chord.forEach((frequency, position) => {
       const osc = context.createOscillator();
       osc.type = position === 0 ? 'sine' : 'triangle';
       osc.frequency.value = frequency;
 
       const gain = context.createGain();
-      gain.gain.value = [0.075, 0.04, 0.026][position];
+      // The root carries the chord; the voices above it only colour.
+      const peak = [0.3, 0.15, 0.115, 0.085][position] ?? 0.08;
+      gain.gain.setValueAtTime(0.0001, when);
+      gain.gain.linearRampToValueAtTime(peak, when + BLOOM);
+      gain.gain.setValueAtTime(peak, when + CHORD - 1);
+      gain.gain.linearRampToValueAtTime(0.0001, when + CHORD + BLOOM);
 
-      // A slow, uneven breath so the drone never sits perfectly still.
-      const lfo = context.createOscillator();
-      lfo.frequency.value = 0.03 + position * 0.017;
-      const lfoGain = context.createGain();
-      lfoGain.gain.value = [0.03, 0.018, 0.012][position];
-      lfo.connect(lfoGain).connect(gain.gain);
-
-      // And a touch of drift in pitch, like two instruments not quite agreeing.
-      const detune = context.createOscillator();
-      detune.frequency.value = 0.021 + position * 0.011;
-      const detuneGain = context.createGain();
-      detuneGain.gain.value = 3.5;
-      detune.connect(detuneGain).connect(osc.detune);
+      // Two instruments not quite agreeing about the note.
+      const drift = context.createOscillator();
+      drift.frequency.value = 0.021 + position * 0.011;
+      const driftGain = context.createGain();
+      driftGain.gain.value = 4;
+      drift.connect(driftGain).connect(osc.detune);
 
       osc.connect(gain).connect(shelf);
-      osc.start();
-      lfo.start();
-      detune.start();
-      voices.push(osc, lfo, detune);
+      osc.start(when);
+      drift.start(when);
+      osc.stop(when + CHORD + BLOOM + 0.5);
+      drift.stop(when + CHORD + BLOOM + 0.5);
+      voices.push(osc, drift);
+
+      osc.onended = () => {
+        voices = voices.filter((voice) => voice !== osc && voice !== drift);
+        gain.disconnect();
+      };
     });
+  }
+
+  /**
+   * Keep the progression going, scheduling each chord a little before it is
+   * due so the browser has time to build it.
+   */
+  function startProgression() {
+    if (!ctx || !master) return;
+    let next = ctx.currentTime + 0.15;
+    let step = 0;
+
+    const pump = () => {
+      if (!ctx || !master || !active) return;
+      while (next < ctx.currentTime + CHORD) {
+        playChord(ctx, master, PROGRESSION[step % PROGRESSION.length], next);
+        next += CHORD;
+        step += 1;
+      }
+    };
+
+    pump();
+    chordTimer = window.setInterval(pump, 2000);
   }
 
   function buildRoomTone(context: AudioContext, out: GainNode) {
@@ -354,6 +430,10 @@ export function createLetterAudio(): LetterAudio {
       window.clearTimeout(bellTimer);
       bellTimer = null;
     }
+    if (chordTimer !== null) {
+      window.clearInterval(chordTimer);
+      chordTimer = null;
+    }
 
     const dying = voices;
     voices = [];
@@ -370,5 +450,5 @@ export function createLetterAudio(): LetterAudio {
     }, 1800);
   }
 
-  return { start, stop, pen, playing: () => active, now: () => title, duck };
+  return { start, stop, pen, playing: () => active, now: () => title, duck, giveUp };
 }

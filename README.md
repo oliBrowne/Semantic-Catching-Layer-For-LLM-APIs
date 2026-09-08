@@ -4,7 +4,7 @@ A cinematic, mobile-first web experience meant to be opened from a QR code
 printed inside a handwritten love letter.
 
 It is not a website about a letter. It is the letter, in the dark, being
-written again — one stroke at a time, by a hand you cannot see.
+written again: one stroke at a time, by a hand you cannot see.
 
 ---
 
@@ -12,9 +12,9 @@ written again — one stroke at a time, by a hand you cannot see.
 
 - **It waits to be started.** After the opening, one circled word. Pressing it
   grows vines out across the screen, and is also the touch that lets the page
-  make a sound — no browser allows that without one.
+  make a sound: no browser allows that without one.
 - **It plays itself, and the page cannot be scrolled while it does.** Not by
-  cancelling touch events — while the letter is being written the document is
+  cancelling touch events: while the letter is being written the document is
   exactly one screen tall, so there is nowhere for it to go. The frame is fixed
   to the window and nothing moves down the page.
 - **The scroll comes back when the letter is finished**, and what is down there
@@ -36,7 +36,7 @@ written again — one stroke at a time, by a hand you cannot see.
 - **The photograph develops.** One picture, revealed as a band behind the last
   sentence and opened outward only if the reader keeps going.
 - **A real signature.** Not the alphabet set larger: a cursive run authored on
-  its own — an oversized capital, a looped ascender, the rest of the name in one
+  its own: an oversized capital, a looped ascender, the rest of the name in one
   unbroken movement, the dot added afterwards as it always is, and a swash
   underneath that exists only for the pleasure of making it.
 
@@ -64,7 +64,7 @@ Three things, and nothing else, need changing.
 
 ### 1. The photograph
 
-Replace **`public/photo.jpg`** with your picture. Keep the filename — it is
+Replace **`public/photo.jpg`** with your picture. Keep the filename: it is
 imported directly so the build can size and blur-placeholder it.
 
 Portrait crops work best; it is displayed full-bleed behind the last words.
@@ -93,20 +93,20 @@ takes to dissolve, and how much dark there is before the next one starts.
 Nothing in this repository can fetch a commercial recording, so this needs
 something from you. There are two ways, tried in this order.
 
-**Audio files** — the good one. Full songs, in order, looping, for everyone who
+**Audio files**: the good one. Full songs, in order, looping, for everyone who
 opens the letter. Put them in `public/music/` as `01` and `02` with any
 extension a browser plays. You need a real file, which means a purchase that
 gives you one: iTunes Store, Amazon Music, Bandcamp, Qobuz, a CD. A Spotify or
-Apple Music subscription does not — those downloads are encrypted and stay
+Apple Music subscription does not: those downloads are encrypted and stay
 inside their apps. Files can also live elsewhere: put a full https URL in
 `content/music.ts` and they are played from there.
 
-**Spotify** — the one that needs no files. Paste track IDs into
+**Spotify**: the one that needs no files. Paste track IDs into
 `SPOTIFY_TRACKS` in `content/music.ts` and the piece uses Spotify's own
 embedded player, which is the licensed way to put a particular recording on a
 page. Two things to know first: someone signed in to Spotify in that browser
 hears the whole song and everyone else hears about thirty seconds, and the
-player is a visible Spotify widget — small and dimmed at the foot of the
+player is a visible Spotify widget: small and dimmed at the foot of the
 screen, but there, because Spotify's terms do not allow it to be hidden.
 
 With neither, it falls back to a room tone it synthesises for itself.
@@ -134,7 +134,7 @@ Deploy anywhere static. A GitHub Pages workflow is included at
 `.github/workflows/deploy.yml`:
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. Get this onto `main` — the workflow builds that branch. (Renaming the
+2. Get this onto `main`: the workflow builds that branch. (Renaming the
    branch under **Settings → Branches** is enough if there is nothing else
    in the repository yet.)
 3. The workflow sets `BASE_PATH` to `/<repo-name>` for you, so the published
@@ -144,7 +144,7 @@ Deploy anywhere static. A GitHub Pages workflow is included at
 To serve from a domain root instead, build with `BASE_PATH=` (empty).
 
 Because the URL is unguessable in practice, the page is marked `noindex`. It is
-still a public URL — treat it as private-by-obscurity, not as a secret.
+still a public URL: treat it as private-by-obscurity, not as a secret.
 
 ---
 
@@ -152,7 +152,7 @@ still a public URL — treat it as private-by-obscurity, not as a secret.
 
 This is the part worth reading if you want to change how it feels.
 
-**`lib/font/strokes.ts`** — the alphabet. Each glyph is one or more strokes,
+**`lib/font/strokes.ts`**: the alphabet. Each glyph is one or more strokes,
 each a run of `x,y` points the nib passes through, on a 100-unit em with the
 baseline at `y = 0`:
 
@@ -164,15 +164,15 @@ The pen lifts between strokes, exactly as it does on paper. Editing a letter
 means moving a few numbers; `/specimen` renders the whole alphabet so you can
 see what you did.
 
-**`lib/handwriting/path.ts`** — turns those points into smooth cubic beziers
+**`lib/handwriting/path.ts`**: turns those points into smooth cubic beziers
 (so the strokes curve the way a wrist does), estimates their length, and
 occasionally lets one overshoot.
 
-**`lib/handwriting/layout.ts`** — sets the passage: measures words, wraps to the
+**`lib/handwriting/layout.ts`**: sets the passage: measures words, wraps to the
 column with a hanging indent so poetry that turns over still reads as poetry,
 then jitters every glyph and returns each stroke as an SVG path.
 
-**`components/HandwritingText.tsx`** — draws it. Each path carries
+**`components/HandwritingText.tsx`**: draws it. Each path carries
 `pathLength="1"`, so a single `stroke-dashoffset` tween from `1` to `0` traces
 it exactly, at a speed proportional to its length. Words get a slight speed of
 their own, ink darkens and settles as each one lands, and a faint warm bloom
@@ -184,7 +184,7 @@ wrap.
 
 **`components/Letter.tsx`** is the sequence. It holds an index, hands it to one
 card at a time, and each card reports back when it has been written, held and
-has left — which is what moves the index on. When the last of it has been said
+has left: which is what moves the index on. When the last of it has been said
 it tells `Experience`, and that is the moment the page grows underneath the
 frame and the reader gets their scroll back.
 
@@ -204,7 +204,7 @@ around the point that was pressed and given a different size, lean and speed
 each time. Seven of them out of one set of strokes.
 
 **`components/DrawnMark.tsx`** draws the other things that are not
-letters — the heart and the signature — both in `lib/font/marks.ts`.
+letters: the heart and the signature: both in `lib/font/marks.ts`.
 
 The signature is worth a note if you ever want to change it. Cursive lives in
 the joins, so it is authored as one long run with far more points than a glyph
@@ -214,8 +214,8 @@ the whole thing came out as an even row of humps that said "Olivam". Space them
 generously and turn the corners rather than cornering them.
 
 The warm glow is a single point of light carried along with the pen rather than
-a bloom left on each finished word. It began as a workaround — a bloom could not
-survive the writing being run backwards, which it could at one point — and
+a bloom left on each finished word. It began as a workaround: a bloom could not
+survive the writing being run backwards, which it could at one point: and
 turned out to be the better idea anyway.
 
 ---
@@ -230,7 +230,7 @@ Measured on the built site, iPhone 13 profile, CPU throttled 6x:
 | **first stroke of ink** | **1.5s** | **3.7s** |
 
 The letter runs about three and a half minutes and cannot be scrolled while it
-does — that is deliberate, but it is a long time to hold someone, so know the
+does: that is deliberate, but it is a long time to hold someone, so know the
 number. The pacing lives in `linger` per card in `content/letter.ts` and in
 `HOLD`, `FADE` and `GAP` at the top of `components/Card.tsx`. Anyone who has
 asked for reduced motion gets the same letter in the same order with the waits
@@ -267,7 +267,7 @@ Two things kept off the main thread on purpose:
 - Scene layers are promoted only while they are on screen. Eight full-viewport
   layers held permanently is a lot of memory to ask a phone for.
 - `prefers-reduced-motion` replaces the drawing with a calm sequential fade and
-  stills the dust entirely — the line-by-line reading, the pacing and every cue
+  stills the dust entirely: the line-by-line reading, the pacing and every cue
   survive.
 - The full text of every passage is in the DOM for screen readers and for
   copy-and-paste, even though the visible letters are vector strokes.

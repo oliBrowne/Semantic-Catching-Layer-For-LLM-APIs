@@ -30,7 +30,7 @@ function openingBeat(): number {
  * Black, for long enough that it stops feeling like a loading screen and
  * starts feeling like a room with the lights off. Then a hand starts writing.
  *
- * This is the one part of the piece that is not on the scrollbar — it has to
+ * This is the one part of the piece that is not on the scrollbar: it has to
  * come alive on its own, because at this point the reader has done nothing but
  * point a camera at a piece of paper.
  */

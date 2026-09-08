@@ -258,7 +258,7 @@ body {
 
 /*
   The room dimming once the last sentence has been written. A real element with
-  its own opacity rather than a variable on :root — changing a custom property
+  its own opacity rather than a variable on :root: changing a custom property
   up there invalidates style for the entire document on every frame of it.
 */
 .atmosphere__dim {
@@ -338,7 +338,7 @@ body {
 
 /*
   Spotify's player, when there are no audio files to play instead. It has to be
-  visible — their terms do not allow it to be hidden — so it sits as low and as
+  visible (their terms do not allow it to be hidden), so it sits as low and as
   quietly as it can, and only appears once someone has asked for sound.
 */
 .spotify {
@@ -562,7 +562,7 @@ body {
 
 /*
   Wider than the screen on purpose, so the vines run off the edges rather than
-  stopping politely inside them — and centred with margins rather than by the
+  stopping politely inside them, and centred with margins rather than by the
   grid, because a grid item larger than its container gets clamped to the start
   corner instead of centring.
 */
@@ -735,7 +735,7 @@ body {
 }
 
 /*
-  When the poem comes back, the ending gets out of its way — the last sentence,
+  When the poem comes back, the ending gets out of its way: the last sentence,
   the heart, the name and the photograph all go, and the letter is alone in the
   dark for the first time since it started.
 */

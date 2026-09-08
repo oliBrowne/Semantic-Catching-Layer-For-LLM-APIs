@@ -2,7 +2,7 @@
  * The letter itself.
  *
  * The lines are the ones from the page, grouped into what the reader sees at
- * once — two or three at a time, so a thought arrives whole rather than a line
+ * once: two or three at a time, so a thought arrives whole rather than a line
  * at a time. `linger` is the extra seconds a card is held for after its last
  * word, on top of the beat every card gets, and that is where the pacing of
  * the piece lives.

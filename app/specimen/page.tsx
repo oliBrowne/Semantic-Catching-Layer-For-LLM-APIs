@@ -9,7 +9,7 @@ import { HEART, SIGNATURE_MARK } from '@/lib/font/marks';
 /**
  * A type specimen, for tuning the alphabet and the two drawings.
  *
- * Not part of the letter — it exists so the strokes can be looked at directly.
+ * Not part of the letter: it exists so the strokes can be looked at directly.
  */
 const SAMPLES = [
   'abcdefghijklm\nnopqrstuvwxyz',

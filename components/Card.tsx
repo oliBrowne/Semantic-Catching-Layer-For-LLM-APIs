@@ -54,7 +54,7 @@ export type CardProps = {
 /**
  * Two or three lines of the letter.
  *
- * The card never moves down the page — nothing here does. It occupies the same
+ * The card never moves down the page: nothing here does. It occupies the same
  * place in a frame fixed to the window, writes itself when the letter reaches
  * it, is held long enough to land, and lifts away.
  */

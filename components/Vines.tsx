@@ -16,7 +16,7 @@ const COUNT = 7;
  * One authored tendril, rotated around the point and given a different size,
  * lean and speed each time so no two are the same. They grow out from the
  * centre, hold for a moment, and are gone by the time the first line is
- * written — the whole thing is over inside three seconds.
+ * written: the whole thing is over inside three seconds.
  */
 export default function Vines({ on }: { on: boolean }) {
   const hostRef = useRef<SVGSVGElement | null>(null);

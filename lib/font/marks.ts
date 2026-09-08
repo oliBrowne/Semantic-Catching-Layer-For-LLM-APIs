@@ -40,7 +40,7 @@ export const HEART: Mark = {
  * The signature.
  *
  * A signature is not handwriting. It is a shape a person has made so many
- * times that it has stopped being letters — which is why this is authored as
+ * times that it has stopped being letters: which is why this is authored as
  * one long cursive run rather than assembled from the alphabet, and why it
  * needs far more points than a glyph does. Cursive lives in the joins: the
  * upstroke out of one letter is the entry into the next, and the loops have to
@@ -74,7 +74,7 @@ export const SIGNATURE_MARK: Mark = {
  * One tendril, drawn from the origin outward and curling back on itself at the
  * tip, with three leaves and a short second branch. It is authored once and
  * then rotated around a point, which is what makes a whole thicket of them out
- * of a single set of strokes — and why the leaves all lean the same way
+ * of a single set of strokes: and why the leaves all lean the same way
  * relative to their stem, as real ones do.
  */
 export const VINE: Mark = {
@@ -98,7 +98,7 @@ export const VINE: Mark = {
  * A ring, drawn round a word the way you would circle something in a letter.
  *
  * One pass, not quite closed, overshooting a little where the hand comes back
- * to where it started — which is the only reason it reads as drawn rather than
+ * to where it started: which is the only reason it reads as drawn rather than
  * as a border.
  */
 export const RING: Mark = {
